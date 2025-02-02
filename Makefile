@@ -6,6 +6,7 @@ CXXFLAGS = -std=c++23
 TARGET = simulator
 OBJDIR = build
 SRC = src
+OUTPUTS = outputs
 
 # List of source files (using a wildcard)
 SRCS = $(wildcard $(SRC)/*.cpp)
@@ -33,3 +34,5 @@ $(OBJDIR):
 clean:
 	rm -f $(TARGET) $(OBJS)
 	rm -rf $(OBJDIR)
+	rm -rf $(OUTPUTS)
+	rm -f a.out

@@ -3,18 +3,19 @@
 int num_peers=10;
 double slow_percent=20;
 double low_cpu_percent=30;
-double transaction_lambda=30;
-double block_lambda=600;
-long double current_time=0;
-long int txn_counter = 1;
+double transaction_lambda=3000;   // microseconds
+double block_lambda=600;        // seconds
+long double current_time=0;     // microseconds
+long double end_time = 10;    // microseconds
+long int txn_counter = 0;
 
-unordered_map<int,unordered_map<int,int>> rhos;
+unordered_map<int,unordered_map<int,int>> rhos;  // milliseconds
 unordered_map<int,Node*> nodes;
 priority_queue<Event*,vector<Event*>,decltype(comp)> events(comp);
 random_device rd;
 mt19937 gen(rd());
 
-void generate_spanning_tree(){
+void generate_network(){
     vector<int> in_tree;
     vector<int> out_tree;
     for(int i=0;i<num_peers;i++) out_tree.push_back(i+1);
@@ -66,8 +67,8 @@ void generate_spanning_tree(){
 
 void generate_nodes(){
     for(int i=0;i<num_peers;i++){
-        if(i<slow_percent*num_peers/100) nodes[i+1]=new Node(i+1,true,false,2*i+1);
-        else nodes[i+1]=new Node(i+1,false,false,2*i+1);
+        if(i<slow_percent*num_peers/100) nodes[i+1]=new Node(i+1,true,false,0);
+        else nodes[i+1]=new Node(i+1,false,false,0);
     }
     vector<int> temp;
     for(int i=0;i<num_peers;i++) temp.push_back(i+1);
@@ -79,23 +80,31 @@ void generate_nodes(){
 
 void generate_events(){
     for(int i=0;i<num_peers;i++){
-        events.push(nodes[i]->generate_event("gen_trans"));
+        events.push(nodes[i+1]->generate_trans_event());
     }
 }
 
 void run_events(){
-    while(!events.empty()){
+    while(!events.empty() && current_time<= end_time){
+        cout << current_time << endl;
         Event* e = events.top();
         events.pop();
-        cout << e->txn->payer_id <<  " generated a transaction at time " << e->timestamp << " with id " << e->txn->txn_id << endl;
+        current_time = e->timestamp;
+
+        for(int i=0;i<num_peers;i++){
+            while(nodes[i+1]->last_gen_time <= current_time) events.push(nodes[i+1]->generate_trans_event());
+        }
+
+        e->process_event();
     }
 }
 
 int main(int argc, char* argv[]) {
     generate_nodes();
-    // generate_events();
-    // run_events();
+    generate_network();
+    generate_events();
+    
+    run_events();
 
-    generate_spanning_tree();
     return 0;
-}
+} 
