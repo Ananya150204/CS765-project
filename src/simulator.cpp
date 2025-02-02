@@ -8,19 +8,72 @@ double block_lambda=600;
 long double current_time=0;
 long int txn_counter = 1;
 
-vector<Node*> nodes;
+unordered_map<int,unordered_map<int,int>> rhos;
+unordered_map<int,Node*> nodes;
 priority_queue<Event*,vector<Event*>,decltype(comp)> events(comp);
 random_device rd;
 mt19937 gen(rd());
 
+void generate_spanning_tree(){
+    vector<int> in_tree;
+    vector<int> out_tree;
+    for(int i=0;i<num_peers;i++) out_tree.push_back(i+1);
+
+    uniform_int_distribution<> dis(0, out_tree.size() - 1);
+    int randomIndex = dis(gen);
+    in_tree.push_back(out_tree[randomIndex]);
+    swap(out_tree[randomIndex],out_tree[out_tree.size()-1]);
+    out_tree.pop_back();
+
+    while (out_tree.size()>0){
+        uniform_int_distribution<> dis(0, out_tree.size() - 1);
+        int randomIndex = dis(gen);
+        int curr_node = out_tree[randomIndex];      // Kon sa node tree me jane wala h
+        swap(out_tree[randomIndex],out_tree[out_tree.size()-1]);
+        out_tree.pop_back();
+
+        uniform_int_distribution<> dis2(0, in_tree.size() - 1);
+        int randomIndex2 = dis2(gen);
+        int tobe = in_tree[randomIndex2];       // Kon sa tree wala node connect hone wala h
+
+        nodes[curr_node]->neighbours.insert(tobe);
+        nodes[tobe]->neighbours.insert(curr_node);
+
+        in_tree.push_back(curr_node);
+    }
+
+    for(int i=0;i<num_peers;i++){
+        while(nodes[i+1]->neighbours.size() < 3){
+            uniform_int_distribution <> dis(1,num_peers);
+            int val = dis(gen);
+            while(val==i+1 || nodes[i+1]->neighbours.find(val) != nodes[i+1]->neighbours.end() 
+            || nodes[val]->neighbours.size()>=6){
+                val = dis(gen); //wapas se chuno
+            } 
+            nodes[i+1]->neighbours.insert(val);
+            nodes[val]->neighbours.insert(i+1);
+        }
+    }
+
+    for(int i=0;i<num_peers;i++){
+        for(auto j:nodes[i+1]->neighbours){
+            uniform_int_distribution <> dis(10,500);
+            rhos[i+1][j] = dis(gen);
+            rhos[j][i+1] = dis(gen);
+        }
+    }
+}
+
 void generate_nodes(){
     for(int i=0;i<num_peers;i++){
-        if(i<slow_percent*num_peers/100) nodes.push_back(new Node(i+1,true,false,2*i+1));
-        else nodes.push_back(new Node(i+1,false,false,2*i+1));
+        if(i<slow_percent*num_peers/100) nodes[i+1]=new Node(i+1,true,false,2*i+1);
+        else nodes[i+1]=new Node(i+1,false,false,2*i+1);
     }
-    shuffle(nodes.begin(),nodes.end(),gen);
+    vector<int> temp;
+    for(int i=0;i<num_peers;i++) temp.push_back(i+1);
+    shuffle(temp.begin(),temp.end(),gen);
     for(int i=0;i<low_cpu_percent*num_peers/100;i++){
-        nodes[i]->is_low_cpu = true;
+        nodes[temp[i]]->is_low_cpu = true;
     }
 }
 
@@ -40,7 +93,9 @@ void run_events(){
 
 int main(int argc, char* argv[]) {
     generate_nodes();
-    generate_events();
-    run_events();
+    // generate_events();
+    // run_events();
+
+    generate_spanning_tree();
     return 0;
 }

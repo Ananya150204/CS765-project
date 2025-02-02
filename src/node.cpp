@@ -15,6 +15,7 @@ Transaction* Node:: generate_transaction(){
     txn_counter++;
     return t;
 }
+
 Event* Node:: generate_event(string event_type){
     Transaction* t = generate_transaction();
     exponential_distribution<> exp_dist(transaction_lambda);          

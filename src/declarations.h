@@ -28,14 +28,11 @@ class Node{
     public:
         long int node_id,coins_owned;
         bool is_slow,is_low_cpu;
+        unordered_set<int> neighbours;
         Node(long int node_id, bool is_slow,bool is_low_cpu,long int coins_owned);
-        Transaction* generate_transaction();           
+        Transaction* generate_transaction();     
         Event* generate_event(string event_type);
 };
-
-
-extern vector<Node*> nodes;
-extern priority_queue<Event*,vector<Event*>,decltype(comp)> events;
 
 extern int num_peers;
 extern double slow_percent;
@@ -46,5 +43,9 @@ extern long double current_time;
 extern long int txn_counter;
 extern random_device rd;
 extern mt19937 gen;
+extern unordered_map<int,unordered_map<int,int>> rhos;
+
+extern unordered_map<int,Node*> nodes;
+extern priority_queue<Event*,vector<Event*>,decltype(comp)> events;
 
 #endif
