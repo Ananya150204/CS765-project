@@ -1,0 +1,1 @@
+g++ simulator.cpp node.cpp event.cpp transaction.cpp -o a.out
