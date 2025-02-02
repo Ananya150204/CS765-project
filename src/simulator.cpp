@@ -3,10 +3,10 @@
 int num_peers=10;
 double slow_percent=20;
 double low_cpu_percent=30;
-double transaction_lambda=3000;   // microseconds
+double transaction_lambda=1e-6;   // microseconds
 double block_lambda=600;        // seconds
 long double current_time=0;     // microseconds
-long double end_time = 10;    // microseconds
+long double end_time = 500000;    // microseconds
 long int txn_counter = 0;
 
 unordered_map<int,unordered_map<int,int>> rhos;  // milliseconds
@@ -86,7 +86,6 @@ void generate_events(){
 
 void run_events(){
     while(!events.empty() && current_time<= end_time){
-        cout << current_time << endl;
         Event* e = events.top();
         events.pop();
         current_time = e->timestamp;

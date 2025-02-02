@@ -13,7 +13,7 @@ Transaction* Node:: generate_transaction(){
     uniform_int_distribution<> dist2(1, this->coins_owned);
 
     Transaction* t = new Transaction(++txn_counter,this->node_id,dist(gen),dist2(gen));
-    txn_counter++;
+    // cout << this->node_id << " generated id " << txn_counter-1 << endl;
     return t;
 }
 

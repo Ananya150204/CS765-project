@@ -23,12 +23,16 @@ $(TARGET): $(OBJS)
 
 # Pattern rule: compile .cpp files to object files in OBJDIR.
 # The pipe symbol (|) indicates that $(OBJDIR) is an order-only prerequisite.
-$(OBJDIR)/%.o: $(SRC)/%.cpp $(SRC)/declarations.h | $(OBJDIR)
+$(OBJDIR)/%.o: $(SRC)/%.cpp $(SRC)/declarations.h | $(OBJDIR) $(OUTPUTS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Ensure that the OBJDIR directory exists
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
+
+$(OUTPUTS):
+	mkdir -p $(OUTPUTS)
+
 
 # Clean rule to remove the executable and object files
 clean:

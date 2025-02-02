@@ -25,9 +25,9 @@ void Event::process_event(){
     if(this->event_type == "gen_trans"){
         nodes[this->sender]->mempool.insert({this->txn->txn_id,this->txn});
 
-        ofstream outFile("outputs/" + to_string(this->sender) + ".txt");
-        outFile << this->timestamp << " generated " << " txn_id " << this->txn->txn_id << endl;
-        outFile.close();
+        // ofstream outFile("outputs/" + to_string(this->sender) + ".txt",ios::app);
+        // outFile << this->timestamp << " generated " << " txn_id " << this->txn->txn_id << endl;
+        // outFile.close();
 
         for(int j:nodes[this->sender]->neighbours){
             long double travelling_time = find_travelling_time(this->sender,j);
@@ -43,9 +43,9 @@ void Event::process_event(){
 
         nodes[this->receiver]->mempool.insert({this->txn->txn_id,this->txn});
 
-        ofstream outFile("outputs/" + to_string(this->receiver) + ".txt");
-        outFile << this->timestamp << " received by " << this->sender << " with txn_id " << this->txn->txn_id << endl;
-        outFile.close();
+        // ofstream outFile("outputs/" + to_string(this->receiver) + ".txt",ios::app);
+        // outFile << this->timestamp << " received by " << this->sender << " with txn_id " << this->txn->txn_id << endl;
+        // outFile.close();
 
         int event_sender = this->sender;
         for(int j:nodes[sender]->neighbours){
