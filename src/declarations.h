@@ -3,7 +3,8 @@
 #include<bits/stdc++.h>
 using namespace std;
 typedef long double ld;
-#define TXN_SIZE 8192
+#define TXN_SIZE 8192    // bits
+#define MAX_BLK_SIZE 8388608    // bits
 
 class Transaction{
     public:
@@ -12,15 +13,18 @@ class Transaction{
    
 };
 
+class Block;
+
 class Event{
     public:
         string event_type;
         ld timestamp;
         Transaction* txn;
+        Block* blk;
         int sender;
         int receiver;
         
-        Event(string event_type,ld timestamp,Transaction*txn, int sender);
+        Event(string event_type,ld timestamp,Transaction*txn=0, int sender=-1);
         void process_event();
 };
 
@@ -33,25 +37,46 @@ class Node{
         long int node_id,coins_owned;
         bool is_slow,is_low_cpu;
         long double last_gen_time;      // microseconds
+        long double last_blk_rec_time;      // microseconds
+        Event* latest_mining_event;
+
+        unordered_map<long int,vector<long int>> blockchain_tree;       // tree[parent] = child
+        unordered_map<long int,Block*> blk_id_to_pointer;       // 1 se genesis block start h 0 denotes null block
+        Block* longest_chain_leaf;
+
         unordered_set<int> neighbours;
         unordered_map<long int,Transaction*> mempool;
         Node(long int node_id, bool is_slow,bool is_low_cpu,long int coins_owned);
         Transaction* generate_transaction();     
         Event* generate_trans_event();
+        Event* generate_block_event(long int id=-1);
 };
+
+class Block{
+    public:
+        long int blk_id;
+        long int prev_blk_id;
+        vector<long int> txns;
+        long int block_size;        // bits
+        long int depth;         // starting at 1
+        long double timestamp;
+        long int miner;       // Node_id of the miner
+};
+
 
 extern int num_peers;
 extern double slow_percent;
 extern double low_cpu_percent;
-extern double transaction_lambda;
-extern double block_lambda;
+extern double transaction_mean_time;
+extern double block_mean_time;
 extern long double current_time;
 extern long int txn_counter;
+extern long int blk_counter;
 extern random_device rd;
 extern mt19937 gen;
 extern unordered_map<int,unordered_map<int,int>> rhos;
 
 extern unordered_map<int,Node*> nodes;
-extern priority_queue<Event*,vector<Event*>,decltype(comp)> events;
+extern set<Event*,decltype(comp)> events;
 
 #endif

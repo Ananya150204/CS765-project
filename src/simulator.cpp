@@ -3,15 +3,16 @@
 int num_peers=10;
 double slow_percent=20;
 double low_cpu_percent=30;
-double transaction_lambda=1e-6;   // microseconds
-double block_lambda=600;        // seconds
+double transaction_mean_time=600000;   // microseconds
+double block_mean_time=600;        // seconds
 long double current_time=0;     // microseconds
 long double end_time = 500000;    // microseconds
 long int txn_counter = 0;
+long int blk_counter = 0;
 
 unordered_map<int,unordered_map<int,int>> rhos;  // milliseconds
 unordered_map<int,Node*> nodes;
-priority_queue<Event*,vector<Event*>,decltype(comp)> events(comp);
+set<Event*,decltype(comp)> events;
 random_device rd;
 mt19937 gen(rd());
 
@@ -80,21 +81,24 @@ void generate_nodes(){
 
 void generate_events(){
     for(int i=0;i<num_peers;i++){
-        events.push(nodes[i+1]->generate_trans_event());
+        events.insert(nodes[i+1]->generate_trans_event());
     }
 }
 
 void run_events(){
     while(!events.empty() && current_time<= end_time){
-        Event* e = events.top();
-        events.pop();
+        Event* e = *(events.begin());
+        events.erase(prev(events.end()));
+        
         current_time = e->timestamp;
-
-        for(int i=0;i<num_peers;i++){
-            while(nodes[i+1]->last_gen_time <= current_time) events.push(nodes[i+1]->generate_trans_event());
-        }
-
         e->process_event();
+
+        if(e->event_type == "gen_trans"){
+            events.insert(nodes[e->sender]->generate_trans_event());
+        }
+        else if(e->event_type == "gen_block"){
+            events.insert(nodes[e->sender]->generate_block_event());
+        }
     }
 }
 
