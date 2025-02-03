@@ -89,9 +89,8 @@ void run_events(){
         Event* e = events.top();
         events.pop();
         current_time = e->timestamp;
-
-        for(int i=0;i<num_peers;i++){
-            while(nodes[i+1]->last_gen_time <= current_time) events.push(nodes[i+1]->generate_trans_event());
+        if(e->event_type=="gen_trans"){
+            events.push(nodes[e->sender]->generate_trans_event());
         }
 
         e->process_event();
