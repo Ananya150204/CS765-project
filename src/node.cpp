@@ -57,7 +57,7 @@ Event* Node:: generate_block_event(long int id){       // boli lag rha h mining 
     e->blk = to_be_mined;
     e->sender = this->node_id;
     this->latest_mining_event = e;
-    cout << "Block will be gen by "  << this->node_id << " at " << e->timestamp << endl;
+    cout << "Block: "<< e->blk->blk_id << " will be gen by "  << this->node_id << " at " << e->timestamp << endl;
     return e;
     // TODO: include transactions here itself because they are technically specified here only
     // TODO: set block size too
@@ -72,6 +72,9 @@ void Node:: print_tree_to_file(){
         q.pop();
         for(auto j:this->blockchain_tree[curr_block]){
             outFile << curr_block << " " << j << endl;
+            if(curr_block == j){
+                cout << "YE TO PAAP HO GYA" << endl;
+            }
             q.push(j);
         }
     }

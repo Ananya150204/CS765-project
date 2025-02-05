@@ -55,6 +55,7 @@ class Node{
 
         unordered_map<long int,unordered_set<long int>> blockchain_tree;       // tree[parent] = child
         unordered_map<long int,Block*> blk_id_to_pointer;       // 1 se genesis block start h 0 denotes null block
+        unordered_set<Block*> orphaned_blocks;
         Block* longest_chain_leaf;
 
         unordered_set<int> neighbours;

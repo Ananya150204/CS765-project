@@ -4,11 +4,11 @@ int num_peers=10;
 double slow_percent=10;
 double low_cpu_percent=50;
 double transaction_mean_time=5000000;   // microseconds
-double block_mean_time=600;        // seconds
+double block_mean_time=600000000;        // microseconds
 long double current_time=0;     // microseconds
-long double end_time = 1000000000;    // microseconds
+long double end_time = 2000000000;    // microseconds
 long int txn_counter = 0;
-long int blk_counter = 0;
+long int blk_counter = 1;
 
 unordered_map<int,unordered_map<int,int>> rhos;  // milliseconds
 unordered_map<int,Node*> nodes;
@@ -94,16 +94,14 @@ void run_events(){
         
         current_time = e->timestamp;
         e->process_event();
-        cerr << e->sender << " " << e->event_type << endl;
 
         if(e->event_type == "gen_trans"){
-            // cout << "GEN TRANS EVENT BY " << e->sender << " at " << e->timestamp << endl;
             events.insert(nodes[e->sender]->generate_trans_event());
         }
         else if(e->event_type == "gen_block"){
-            // cout << "GEN BLOCK EVENT BY " << e->sender << endl;
             events.insert(nodes[e->sender]->generate_block_event());
         }
+        delete e;
     }
 }
 
