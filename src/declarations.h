@@ -47,10 +47,8 @@ inline auto comp = [](Event* a,Event* b)->bool{
 
 class Node{
     public:
-        long int node_id,coins_owned;
+        long int node_id;
         bool is_slow,is_low_cpu;
-        long double last_gen_time;      // microseconds
-        long double last_blk_rec_time;      // microseconds
         Event* latest_mining_event;
 
         unordered_map<long int,unordered_set<long int>> blockchain_tree;       // tree[parent] = child
@@ -60,21 +58,22 @@ class Node{
 
         unordered_set<int> neighbours;
         unordered_map<long int,Transaction*> mempool;
-        Node(long int node_id, bool is_slow,bool is_low_cpu,long int coins_owned);
+        Node(long int node_id, bool is_slow,bool is_low_cpu);
         Transaction* generate_transaction();     
         Event* generate_trans_event();
         Event* generate_block_event(long int id=-1);
-        void update_longest_chain(Event*);
-        void check_validity(Event*);
+        void update_tree_and_add(Block*b,Block*prev_block);
+        bool check_balance_validity(Event*);
         void print_tree_to_file();
-        vector<int>balances;
+        bool traverse_to_genesis_and_check(Block*);
+        vector<long int>balances;
 };
 
 class Block{
     public:
         long int blk_id;
         long int prev_blk_id;
-        vector<long int> txns;
+        vector<Transaction*> transactions;
         long int block_size;        // bits
         long int depth;         // starting at 1
         long double timestamp;

@@ -69,8 +69,8 @@ void generate_network(){
 
 void generate_nodes(){
     for(int i=0;i<num_peers;i++){
-        if(i<slow_percent*num_peers/100) nodes[i+1]=new Node(i+1,true,false,0);
-        else nodes[i+1]=new Node(i+1,false,false,0);
+        if(i<slow_percent*num_peers/100) nodes[i+1]=new Node(i+1,true,false);
+        else nodes[i+1]=new Node(i+1,false,false);
     }
     vector<int> temp;
     for(int i=0;i<num_peers;i++) temp.push_back(i+1);
