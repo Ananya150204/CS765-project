@@ -3,3 +3,5 @@ make
 ./simulator > out.txt
 
 
+
+
