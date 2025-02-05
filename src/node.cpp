@@ -16,6 +16,7 @@ Node::Node(long int node_id, bool is_slow,bool is_low_cpu,long int coins_owned){
     this->longest_chain_leaf = genesis_block;
     this->last_blk_rec_time = 0;
     this->latest_mining_event = 0;
+    this->balances = vector<int>(num_peers+1,0);
 }
 
 Transaction* Node:: generate_transaction(){            
@@ -34,16 +35,21 @@ Event* Node:: generate_trans_event(){
     long double value = exp_dist(gen);
     Event *e = new Event("gen_trans",value+this->last_gen_time,t,this->node_id);
     this->last_gen_time += value;
+    cout << "Trans gen by "  << this->node_id << " at " << e->timestamp << endl;
     return e;
 }
 
 Event* Node:: generate_block_event(long int id){       // boli lag rha h mining slot ka success hua(tree me add hone) ya nahi wo yahi wala event process jab hoga tab pata chalega
+  
+    // cout<<"new block event created"<<endl;
+ 
     Block* to_be_mined = new Block();
     to_be_mined->miner = this->node_id;
     to_be_mined->prev_blk_id = this->longest_chain_leaf->blk_id;
 
     if(id==-1) to_be_mined->blk_id  = ++blk_counter;
     else to_be_mined->blk_id = id;
+    // cout<<"BLK event started"<<endl;
 
     exponential_distribution<> dis(1/block_mean_time);
     to_be_mined->timestamp = last_blk_rec_time + dis(gen);
@@ -51,8 +57,31 @@ Event* Node:: generate_block_event(long int id){       // boli lag rha h mining 
     e->blk = to_be_mined;
     e->sender = this->node_id;
     this->latest_mining_event = e;
+    cout << "Block will be gen by "  << this->node_id << " at " << e->timestamp << endl;
     return e;
-
     // TODO: include transactions here itself because they are technically specified here only
     // TODO: set block size too
+}
+
+void Node:: print_tree_to_file(){
+    ofstream outFile("outputs/" + to_string(this->node_id) + ".txt",ios::app);
+    queue<long int> q;
+    q.push(1);
+    while(!q.empty()){
+        long int curr_block = q.front();
+        q.pop();
+        for(auto j:this->blockchain_tree[curr_block]){
+            outFile << curr_block << " " << j << endl;
+            q.push(j);
+        }
+    }
+    outFile.close();
+}
+
+void Node:: update_longest_chain(Event*e){
+
+}
+
+void Node:: check_validity(Event*e){
+    
 }

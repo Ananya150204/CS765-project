@@ -1,12 +1,12 @@
 #include "declarations.h"
 
 int num_peers=10;
-double slow_percent=20;
-double low_cpu_percent=30;
-double transaction_mean_time=600000;   // microseconds
+double slow_percent=10;
+double low_cpu_percent=50;
+double transaction_mean_time=5000000;   // microseconds
 double block_mean_time=600;        // seconds
 long double current_time=0;     // microseconds
-long double end_time = 500000;    // microseconds
+long double end_time = 1000000000;    // microseconds
 long int txn_counter = 0;
 long int blk_counter = 0;
 
@@ -14,7 +14,8 @@ unordered_map<int,unordered_map<int,int>> rhos;  // milliseconds
 unordered_map<int,Node*> nodes;
 set<Event*,decltype(comp)> events;
 random_device rd;
-mt19937 gen(rd());
+// mt19937 gen(rd());
+mt19937 gen(42);
 
 void generate_network(){
     vector<int> in_tree;
@@ -79,24 +80,28 @@ void generate_nodes(){
     }
 }
 
-void generate_events(){
+void generate_events(bool block){
     for(int i=0;i<num_peers;i++){
-        events.insert(nodes[i+1]->generate_trans_event());
+        if(block) events.insert(nodes[i+1]->generate_block_event());
+        else events.insert(nodes[i+1]->generate_trans_event());
     }
 }
 
 void run_events(){
     while(!events.empty() && current_time<= end_time){
         Event* e = *(events.begin());
-        events.erase(prev(events.end()));
+        events.erase(events.begin());
         
         current_time = e->timestamp;
         e->process_event();
+        cerr << e->sender << " " << e->event_type << endl;
 
         if(e->event_type == "gen_trans"){
+            // cout << "GEN TRANS EVENT BY " << e->sender << " at " << e->timestamp << endl;
             events.insert(nodes[e->sender]->generate_trans_event());
         }
         else if(e->event_type == "gen_block"){
+            // cout << "GEN BLOCK EVENT BY " << e->sender << endl;
             events.insert(nodes[e->sender]->generate_block_event());
         }
     }
@@ -105,9 +110,13 @@ void run_events(){
 int main(int argc, char* argv[]) {
     generate_nodes();
     generate_network();
-    generate_events();
-    
+    generate_events(false);
+    generate_events(true);
     run_events();
+    
+    for(int i = 0;i<num_peers;i++){
+        nodes[i+1]->print_tree_to_file();
+    }
 
     return 0;
 } 

@@ -61,7 +61,7 @@ void Event::process_event(){
         Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
 
         cur_node->blk_id_to_pointer[this->blk->blk_id] = this->blk;
-        cur_node->blockchain_tree[this->blk->prev_blk_id].push_back(this->blk->blk_id);
+        cur_node->blockchain_tree[this->blk->prev_blk_id].insert(this->blk->blk_id);
 
         this->blk->depth = 1 + prev_block->depth;
 
@@ -86,6 +86,7 @@ void Event::process_event(){
     else if(this->event_type == "rec_block"){
         // TODO: validate block
         // If not valid return
+        // cout << "Entered at rec_block for receiver "  << this->receiver << " at timestamp " << this->timestamp << endl;        
 
         // If block already there in the tree of receiver (of this event) then eat five star
         if(nodes[this->receiver]->blk_id_to_pointer.find(this->blk->blk_id) != 
@@ -93,12 +94,18 @@ void Event::process_event(){
             return;
         } 
 
+        // 
+        //
+        
         Node* cur_node = nodes[this->receiver];
+        if(cur_node->blk_id_to_pointer[this->blk->prev_blk_id]==NULL){
+            cout <<  "Ye nahi ana chahye tha" << endl;
+        }
         Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
         this->blk->depth = 1 + prev_block->depth;
 
         cur_node->blk_id_to_pointer[this->blk->blk_id] = this->blk;
-        cur_node->blockchain_tree[this->blk->prev_blk_id].push_back(this->blk->blk_id);
+        cur_node->blockchain_tree[this->blk->prev_blk_id].insert(this->blk->blk_id);
 
         // TODO: for ties
         if(cur_node->longest_chain_leaf->depth < this->blk->depth){
@@ -106,6 +113,7 @@ void Event::process_event(){
             cur_node->last_blk_rec_time = this->timestamp;  
             if(cur_node->latest_mining_event){
                 events.erase(cur_node->latest_mining_event);
+                cout << "Mining stopped" << endl;
                 long int cancel_hone_wala_id = cur_node->latest_mining_event->blk->blk_id;
                 events.insert(cur_node->generate_block_event(cancel_hone_wala_id));
             }
