@@ -72,9 +72,6 @@ void Node:: print_tree_to_file(){
         q.pop();
         for(auto j:this->blockchain_tree[curr_block]){
             outFile << curr_block << " " << j << endl;
-            if(curr_block == j){
-                cout << "YE TO PAAP HO GYA" << endl;
-            }
             q.push(j);
         }
     }

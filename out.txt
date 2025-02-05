@@ -137,25 +137,16 @@ Trans gen by 2 at 5.98756e+07
 Trans gen by 2 at 6.2506e+07
 Gen block: 11 happening at node: 10
 Block: 12 will be gen by 10 at 1.49184e+09
-Mining stopped for block: 3
 Block: 3 will be gen by 2 at 1.26896e+08
 Trans gen by 5 at 6.57674e+07
-Mining stopped for block: 9
 Block: 9 will be gen by 8 at 2.5403e+08
-Mining stopped for block: 5
 Block: 5 will be gen by 4 at 6.52306e+08
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 2.37882e+08
-Mining stopped for block: 2
 Block: 2 will be gen by 1 at 1.80672e+08
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 4.04376e+08
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 2.01887e+08
 Trans gen by 4 at 6.57222e+07
-Mining stopped for block: 8
 Block: 8 will be gen by 7 at 1.03796e+09
-Mining stopped for block: 6
 Block: 6 will be gen by 5 at 1.46236e+09
 Trans gen by 10 at 7.41048e+07
 Trans gen by 3 at 6.7364e+07
@@ -288,23 +279,14 @@ Trans gen by 3 at 1.29863e+08
 Gen block: 3 happening at node: 2
 Block: 13 will be gen by 2 at 6.41823e+08
 Trans gen by 7 at 1.332e+08
-Mining stopped for block: 12
 Block: 12 will be gen by 10 at 2.37986e+08
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 7.49456e+08
-Mining stopped for block: 5
 Block: 5 will be gen by 4 at 4.07933e+08
-Mining stopped for block: 9
 Block: 9 will be gen by 8 at 1.31965e+08
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 4.67317e+08
-Mining stopped for block: 2
 Block: 2 will be gen by 1 at 3.37973e+08
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 1.19759e+09
-Mining stopped for block: 6
 Block: 6 will be gen by 5 at 2.68631e+08
-Mining stopped for block: 8
 Block: 8 will be gen by 7 at 7.01228e+08
 Trans gen by 5 at 1.28372e+08
 Trans gen by 10 at 1.3008e+08
@@ -319,23 +301,14 @@ Trans gen by 10 at 1.31917e+08
 Trans gen by 10 at 1.41851e+08
 Gen block: 9 happening at node: 8
 Block: 14 will be gen by 8 at 4.3647e+08
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 4.03888e+08
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 4.06019e+08
-Mining stopped for block: 12
 Block: 12 will be gen by 10 at 2.43114e+09
-Mining stopped for block: 8
 Block: 8 will be gen by 7 at 2.45396e+08
-Mining stopped for block: 2
 Block: 2 will be gen by 1 at 1.03684e+09
-Mining stopped for block: 13
 Block: 13 will be gen by 2 at 1.57888e+09
-Mining stopped for block: 6
 Block: 6 will be gen by 5 at 2.29721e+08
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 1.60216e+09
-Mining stopped for block: 5
 Block: 5 will be gen by 4 at 4.83433e+08
 Trans gen by 7 at 1.33201e+08
 Trans gen by 7 at 1.35254e+08
@@ -533,25 +506,16 @@ Trans gen by 7 at 2.46186e+08
 Gen block: 6 happening at node: 5
 Block: 15 will be gen by 5 at 2.02144e+09
 Trans gen by 2 at 2.30547e+08
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 1.00481e+09
-Mining stopped for block: 8
 Block: 8 will be gen by 7 at 4.04937e+08
-Mining stopped for block: 2
 Block: 2 will be gen by 1 at 1.03865e+09
-Mining stopped for block: 14
 Block: 14 will be gen by 8 at 6.35926e+08
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 4.75061e+08
-Mining stopped for block: 13
 Block: 13 will be gen by 2 at 3.00092e+08
-Mining stopped for block: 5
 Block: 5 will be gen by 4 at 5.71125e+08
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 7.20411e+08
 Trans gen by 4 at 2.30604e+08
 Trans gen by 9 at 2.36663e+08
-Mining stopped for block: 12
 Block: 12 will be gen by 10 at 1.91405e+09
 Trans gen by 2 at 2.31173e+08
 Trans gen by 4 at 2.35123e+08
@@ -689,23 +653,14 @@ Trans gen by 8 at 3.08126e+08
 Trans gen by 6 at 3.01319e+08
 Gen block: 13 happening at node: 2
 Block: 16 will be gen by 2 at 4.91635e+08
-Mining stopped for block: 12
 Block: 12 will be gen by 10 at 6.554e+08
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 4.99593e+08
-Mining stopped for block: 5
 Block: 5 will be gen by 4 at 4.45312e+08
-Mining stopped for block: 14
 Block: 14 will be gen by 8 at 1.01019e+09
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 6.88364e+08
-Mining stopped for block: 2
 Block: 2 will be gen by 1 at 5.44842e+08
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 8.32162e+08
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 6.35446e+08
-Mining stopped for block: 8
 Block: 8 will be gen by 7 at 8.71412e+08
 Trans gen by 6 at 3.08715e+08
 Trans gen by 10 at 3.09662e+08
@@ -995,24 +950,15 @@ Trans gen by 2 at 4.53998e+08
 Trans gen by 4 at 4.5221e+08
 Gen block: 5 happening at node: 4
 Block: 17 will be gen by 4 at 6.37808e+08
-Mining stopped for block: 2
 Block: 2 will be gen by 1 at 6.53953e+08
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 6.5914e+08
 Trans gen by 6 at 4.51133e+08
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.40919e+09
-Mining stopped for block: 14
 Block: 14 will be gen by 8 at 8.64298e+08
-Mining stopped for block: 8
 Block: 8 will be gen by 7 at 6.03289e+08
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 6.48919e+08
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 7.2735e+08
-Mining stopped for block: 12
 Block: 12 will be gen by 10 at 4.68561e+08
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 2.28749e+09
 Trans gen by 7 at 4.46761e+08
 Trans gen by 10 at 4.48204e+08
@@ -1052,23 +998,14 @@ Trans gen by 6 at 4.7581e+08
 Trans gen by 4 at 4.72064e+08
 Gen block: 12 happening at node: 10
 Block: 18 will be gen by 10 at 7.80909e+08
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 6.39333e+08
-Mining stopped for block: 14
 Block: 14 will be gen by 8 at 1.56637e+09
-Mining stopped for block: 17
 Block: 17 will be gen by 4 at 2.43402e+09
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 7.07986e+08
-Mining stopped for block: 2
 Block: 2 will be gen by 1 at 6.76577e+08
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 8.54671e+08
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 2.32076e+09
-Mining stopped for block: 8
 Block: 8 will be gen by 7 at 6.14018e+08
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 8.89538e+08
 Trans gen by 10 at 4.75337e+08
 Trans gen by 3 at 4.74527e+08
@@ -1342,24 +1279,15 @@ Trans gen by 3 at 6.21282e+08
 Trans gen by 9 at 6.22601e+08
 Gen block: 8 happening at node: 7
 Block: 19 will be gen by 7 at 1.29836e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.83852e+09
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 1.03114e+09
-Mining stopped for block: 14
 Block: 14 will be gen by 8 at 7.61501e+08
-Mining stopped for block: 17
 Block: 17 will be gen by 4 at 1.5062e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 1.08473e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 1.4415e+09
-Mining stopped for block: 2
 Block: 2 will be gen by 1 at 6.5046e+08
-Mining stopped for block: 18
 Block: 18 will be gen by 10 at 8.70152e+08
 Trans gen by 10 at 6.1746e+08
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.04252e+09
 Trans gen by 7 at 6.20469e+08
 Trans gen by 1 at 6.3274e+08
@@ -1427,24 +1355,15 @@ Trans gen by 1 at 6.50108e+08
 Trans gen by 1 at 6.53907e+08
 Gen block: 2 happening at node: 1
 Block: 20 will be gen by 1 at 1.44265e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 1.08253e+09
-Mining stopped for block: 17
 Block: 17 will be gen by 4 at 1.37617e+09
-Mining stopped for block: 14
 Block: 14 will be gen by 8 at 7.93533e+08
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 1.6116e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.2095e+09
-Mining stopped for block: 18
 Block: 18 will be gen by 10 at 1.14697e+09
 Trans gen by 8 at 6.5228e+08
-Mining stopped for block: 19
 Block: 19 will be gen by 7 at 9.53899e+08
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 2.25793e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 1.52604e+09
 Trans gen by 2 at 6.62712e+08
 Trans gen by 6 at 6.53686e+08
@@ -1760,25 +1679,16 @@ Trans gen by 7 at 7.92411e+08
 Trans gen by 7 at 8.00591e+08
 Gen block: 14 happening at node: 8
 Block: 21 will be gen by 8 at 1.46214e+09
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 1.05702e+09
 Trans gen by 2 at 8.01963e+08
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 1.23962e+09
-Mining stopped for block: 18
 Block: 18 will be gen by 10 at 2.82369e+09
-Mining stopped for block: 19
 Block: 19 will be gen by 7 at 1.2632e+09
-Mining stopped for block: 20
 Block: 20 will be gen by 1 at 2.32894e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.14512e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.35307e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 1.82745e+09
 Trans gen by 4 at 7.96616e+08
-Mining stopped for block: 17
 Block: 17 will be gen by 4 at 9.99959e+08
 Trans gen by 8 at 7.96673e+08
 Trans gen by 3 at 7.9827e+08
@@ -2202,24 +2112,15 @@ Trans gen by 2 at 1.00267e+09
 Trans gen by 5 at 1.00328e+09
 Gen block: 17 happening at node: 4
 Block: 22 will be gen by 4 at 1.10773e+09
-Mining stopped for block: 20
 Block: 20 will be gen by 1 at 1.01793e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 1.02174e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.15175e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 1.29083e+09
-Mining stopped for block: 19
 Block: 19 will be gen by 7 at 1.01724e+09
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 1.04619e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.05701e+09
-Mining stopped for block: 18
 Block: 18 will be gen by 10 at 1.03168e+09
 Trans gen by 4 at 1.00389e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 1.34064e+09
 Trans gen by 2 at 1.00995e+09
 Trans gen by 5 at 1.00557e+09
@@ -2253,26 +2154,17 @@ Trans gen by 7 at 1.01761e+09
 Trans gen by 10 at 1.02374e+09
 Gen block: 19 happening at node: 7
 Block: 23 will be gen by 7 at 2.17487e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.42918e+09
-Mining stopped for block: 10
 Block: 10 will be gen by 9 at 1.09531e+09
 Trans gen by 1 at 1.02269e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 1.20166e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 1.72931e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 1.18726e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 2.9904e+09
-Mining stopped for block: 20
 Block: 20 will be gen by 1 at 2.39899e+09
 Trans gen by 2 at 1.02705e+09
 Trans gen by 7 at 1.03403e+09
-Mining stopped for block: 18
 Block: 18 will be gen by 10 at 1.44489e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.20751e+09
 Trans gen by 9 at 1.02381e+09
 Trans gen by 3 at 1.021e+09
@@ -2432,24 +2324,15 @@ Trans gen by 9 at 1.09698e+09
 Trans gen by 10 at 1.09859e+09
 Gen block: 10 happening at node: 9
 Block: 24 will be gen by 9 at 1.91865e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 1.63672e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 1.70701e+09
-Mining stopped for block: 23
 Block: 23 will be gen by 7 at 1.64962e+09
-Mining stopped for block: 20
 Block: 20 will be gen by 1 at 1.10021e+09
-Mining stopped for block: 18
 Block: 18 will be gen by 10 at 1.17922e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.41363e+09
 Trans gen by 4 at 1.11997e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.20392e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 2.4779e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 1.41899e+09
 Trans gen by 9 at 1.10044e+09
 Trans gen by 8 at 1.10103e+09
@@ -2459,24 +2342,15 @@ Trans gen by 10 at 1.10135e+09
 Trans gen by 7 at 1.10369e+09
 Gen block: 20 happening at node: 1
 Block: 25 will be gen by 1 at 1.19577e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 3.04056e+09
 Trans gen by 9 at 1.10562e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 2.12116e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 1.36026e+09
-Mining stopped for block: 24
 Block: 24 will be gen by 9 at 1.24793e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.80225e+09
-Mining stopped for block: 18
 Block: 18 will be gen by 10 at 1.90289e+09
-Mining stopped for block: 23
 Block: 23 will be gen by 7 at 2.01517e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.31882e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 2.53131e+09
 Trans gen by 8 at 1.10357e+09
 Trans gen by 10 at 1.1077e+09
@@ -2680,24 +2554,15 @@ Trans gen by 6 at 1.19957e+09
 Trans gen by 5 at 1.20093e+09
 Gen block: 25 happening at node: 1
 Block: 26 will be gen by 1 at 1.50271e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 2.04391e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 1.43939e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 2.18842e+09
-Mining stopped for block: 24
 Block: 24 will be gen by 9 at 1.33389e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.72176e+09
-Mining stopped for block: 18
 Block: 18 will be gen by 10 at 1.37468e+09
 Trans gen by 10 at 1.20173e+09
-Mining stopped for block: 23
 Block: 23 will be gen by 7 at 1.82605e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.79837e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 1.74092e+09
 Trans gen by 3 at 1.19745e+09
 Trans gen by 3 at 1.19893e+09
@@ -2977,24 +2842,15 @@ Trans gen by 5 at 1.33852e+09
 Trans gen by 7 at 1.33696e+09
 Gen block: 24 happening at node: 9
 Block: 27 will be gen by 9 at 1.90383e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 1.98779e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 2.47653e+09
-Mining stopped for block: 23
 Block: 23 will be gen by 7 at 1.4049e+09
-Mining stopped for block: 26
 Block: 26 will be gen by 1 at 2.57646e+09
-Mining stopped for block: 18
 Block: 18 will be gen by 10 at 2.90796e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.41986e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.89255e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 1.79308e+09
 Trans gen by 2 at 1.33883e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 2.07281e+09
 Trans gen by 8 at 1.34725e+09
 Trans gen by 7 at 1.34468e+09
@@ -3151,23 +3007,14 @@ Trans gen by 7 at 1.41183e+09
 Trans gen by 8 at 1.40634e+09
 Gen block: 23 happening at node: 7
 Block: 28 will be gen by 7 at 1.71206e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.50999e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 1.44206e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 2.25369e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 1.59796e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 2.26849e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 1.4822e+09
-Mining stopped for block: 26
 Block: 26 will be gen by 1 at 2.31473e+09
-Mining stopped for block: 18
 Block: 18 will be gen by 10 at 1.41481e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 2.48683e+09
 Trans gen by 4 at 1.40575e+09
 Trans gen by 9 at 1.41254e+09
@@ -3191,24 +3038,15 @@ Trans gen by 4 at 1.43348e+09
 Trans gen by 5 at 1.41576e+09
 Gen block: 18 happening at node: 10
 Block: 29 will be gen by 10 at 1.73241e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.53378e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 1.50449e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 1.77053e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 1.44025e+09
-Mining stopped for block: 26
 Block: 26 will be gen by 1 at 1.46288e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 1.92443e+09
-Mining stopped for block: 4
 Block: 4 will be gen by 3 at 1.43696e+09
 Trans gen by 3 at 1.42229e+09
-Mining stopped for block: 28
 Block: 28 will be gen by 7 at 1.52785e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 2.42272e+09
 Trans gen by 5 at 1.43132e+09
 Trans gen by 8 at 1.43166e+09
@@ -3242,24 +3080,15 @@ Trans gen by 8 at 1.43878e+09
 Trans gen by 3 at 1.43875e+09
 Gen block: 4 happening at node: 3
 Block: 30 will be gen by 3 at 1.90975e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 1.68338e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 3.1464e+09
 Trans gen by 2 at 1.44078e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 3.65025e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 2.0674e+09
-Mining stopped for block: 29
 Block: 29 will be gen by 10 at 1.74588e+09
-Mining stopped for block: 28
 Block: 28 will be gen by 7 at 1.63768e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 2.31508e+09
-Mining stopped for block: 26
 Block: 26 will be gen by 1 at 2.18175e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 2.1404e+09
 Trans gen by 4 at 1.44112e+09
 Trans gen by 6 at 1.43893e+09
@@ -3657,24 +3486,15 @@ Trans gen by 1 at 1.63779e+09
 Trans gen by 6 at 1.6388e+09
 Gen block: 28 happening at node: 7
 Block: 31 will be gen by 7 at 3.92081e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 2.32206e+09
 Trans gen by 1 at 1.64059e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 2.87041e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 2.81204e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 2.24118e+09
-Mining stopped for block: 30
 Block: 30 will be gen by 3 at 2.18396e+09
-Mining stopped for block: 7
 Block: 7 will be gen by 6 at 1.7171e+09
-Mining stopped for block: 26
 Block: 26 will be gen by 1 at 2.72049e+09
-Mining stopped for block: 29
 Block: 29 will be gen by 10 at 1.84558e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 1.809e+09
 Trans gen by 7 at 1.64503e+09
 Trans gen by 3 at 1.64029e+09
@@ -3854,23 +3674,14 @@ Trans gen by 4 at 1.7334e+09
 Trans gen by 10 at 1.72014e+09
 Gen block: 7 happening at node: 6
 Block: 32 will be gen by 6 at 1.9998e+09
-Mining stopped for block: 26
 Block: 26 will be gen by 1 at 2.24871e+09
-Mining stopped for block: 21
 Block: 21 will be gen by 8 at 1.76891e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 3.29095e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 2.04781e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.97113e+09
-Mining stopped for block: 29
 Block: 29 will be gen by 10 at 1.99117e+09
-Mining stopped for block: 31
 Block: 31 will be gen by 7 at 1.79814e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 2.9642e+09
-Mining stopped for block: 30
 Block: 30 will be gen by 3 at 1.81778e+09
 Trans gen by 8 at 1.72499e+09
 Trans gen by 5 at 1.71949e+09
@@ -3975,23 +3786,14 @@ Trans gen by 1 at 1.76883e+09
 Trans gen by 1 at 1.78311e+09
 Gen block: 21 happening at node: 8
 Block: 33 will be gen by 8 at 1.95115e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 2.83685e+09
-Mining stopped for block: 32
 Block: 32 will be gen by 6 at 2.80054e+09
-Mining stopped for block: 29
 Block: 29 will be gen by 10 at 2.44909e+09
-Mining stopped for block: 31
 Block: 31 will be gen by 7 at 2.92522e+09
-Mining stopped for block: 26
 Block: 26 will be gen by 1 at 1.78211e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 2.18263e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 4.15674e+09
-Mining stopped for block: 30
 Block: 30 will be gen by 3 at 2.69773e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 3.46658e+09
 Trans gen by 3 at 1.77232e+09
 Trans gen by 10 at 1.7725e+09
@@ -4020,26 +3822,17 @@ Trans gen by 4 at 1.78771e+09
 Trans gen by 3 at 1.78386e+09
 Gen block: 26 happening at node: 1
 Block: 34 will be gen by 1 at 1.82879e+09
-Mining stopped for block: 32
 Block: 32 will be gen by 6 at 2.36238e+09
 Trans gen by 9 at 1.78439e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 1.86757e+09
-Mining stopped for block: 33
 Block: 33 will be gen by 8 at 1.95813e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 2.08525e+09
 Trans gen by 6 at 1.79525e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 2.36648e+09
-Mining stopped for block: 29
 Block: 29 will be gen by 10 at 1.87958e+09
-Mining stopped for block: 31
 Block: 31 will be gen by 7 at 6.16692e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 2.47001e+09
 Trans gen by 8 at 1.78312e+09
-Mining stopped for block: 30
 Block: 30 will be gen by 3 at 1.9728e+09
 Trans gen by 7 at 1.79429e+09
 Trans gen by 1 at 1.79998e+09
@@ -4120,25 +3913,16 @@ Trans gen by 10 at 1.83127e+09
 Trans gen by 8 at 1.83192e+09
 Gen block: 34 happening at node: 1
 Block: 35 will be gen by 1 at 2.54843e+09
-Mining stopped for block: 32
 Block: 32 will be gen by 6 at 2.16622e+09
 Trans gen by 9 at 1.83202e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 2.34031e+09
-Mining stopped for block: 33
 Block: 33 will be gen by 8 at 2.3287e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 2.66384e+09
-Mining stopped for block: 15
 Block: 15 will be gen by 5 at 1.84629e+09
-Mining stopped for block: 29
 Block: 29 will be gen by 10 at 1.90152e+09
-Mining stopped for block: 31
 Block: 31 will be gen by 7 at 2.27768e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 2.58431e+09
 Trans gen by 4 at 1.83652e+09
-Mining stopped for block: 30
 Block: 30 will be gen by 3 at 2.07609e+09
 Trans gen by 2 at 1.83013e+09
 Trans gen by 1 at 1.83168e+09
@@ -4176,25 +3960,16 @@ Trans gen by 5 at 1.85195e+09
 Gen block: 15 happening at node: 5
 Block: 36 will be gen by 5 at 2.00384e+09
 Trans gen by 3 at 1.84659e+09
-Mining stopped for block: 32
 Block: 32 will be gen by 6 at 2.02632e+09
 Trans gen by 3 at 1.85153e+09
-Mining stopped for block: 31
 Block: 31 will be gen by 7 at 2.0845e+09
-Mining stopped for block: 35
 Block: 35 will be gen by 1 at 2.43222e+09
-Mining stopped for block: 33
 Block: 33 will be gen by 8 at 3.10766e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 2.3805e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 2.86135e+09
 Trans gen by 2 at 1.84706e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 2.09369e+09
-Mining stopped for block: 30
 Block: 30 will be gen by 3 at 1.90361e+09
-Mining stopped for block: 29
 Block: 29 will be gen by 10 at 3.0893e+09
 Trans gen by 2 at 1.86472e+09
 Trans gen by 6 at 1.84942e+09
@@ -4301,23 +4076,14 @@ Trans gen by 10 at 1.90452e+09
 Trans gen by 1 at 1.90786e+09
 Gen block: 30 happening at node: 3
 Block: 37 will be gen by 3 at 2.26622e+09
-Mining stopped for block: 33
 Block: 33 will be gen by 8 at 2.62328e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 4.08671e+09
-Mining stopped for block: 32
 Block: 32 will be gen by 6 at 2.81545e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 2.00958e+09
-Mining stopped for block: 29
 Block: 29 will be gen by 10 at 2.05203e+09
-Mining stopped for block: 31
 Block: 31 will be gen by 7 at 1.92407e+09
-Mining stopped for block: 36
 Block: 36 will be gen by 5 at 2.88307e+09
-Mining stopped for block: 35
 Block: 35 will be gen by 1 at 2.01416e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 2.60084e+09
 Trans gen by 7 at 1.91236e+09
 Trans gen by 10 at 1.90652e+09
@@ -4358,24 +4124,15 @@ Trans gen by 10 at 1.92444e+09
 Trans gen by 1 at 1.92904e+09
 Gen block: 31 happening at node: 7
 Block: 38 will be gen by 7 at 2.25781e+09
-Mining stopped for block: 36
 Block: 36 will be gen by 5 at 2.10519e+09
-Mining stopped for block: 27
 Block: 27 will be gen by 9 at 2.97996e+09
-Mining stopped for block: 33
 Block: 33 will be gen by 8 at 2.10063e+09
-Mining stopped for block: 22
 Block: 22 will be gen by 4 at 2.03256e+09
-Mining stopped for block: 37
 Block: 37 will be gen by 3 at 2.12393e+09
-Mining stopped for block: 32
 Block: 32 will be gen by 6 at 2.08608e+09
-Mining stopped for block: 35
 Block: 35 will be gen by 1 at 2.0564e+09
 Trans gen by 10 at 1.92844e+09
-Mining stopped for block: 29
 Block: 29 will be gen by 10 at 2.10314e+09
-Mining stopped for block: 16
 Block: 16 will be gen by 2 at 2.74381e+09
 Trans gen by 5 at 1.92777e+09
 Trans gen by 9 at 1.93756e+09
