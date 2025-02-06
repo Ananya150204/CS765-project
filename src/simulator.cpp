@@ -111,10 +111,8 @@ int main(int argc, char* argv[]) {
     generate_events(false);
     generate_events(true);
     run_events();
-    cerr << "Hello" << endl;
     
     for(int i = 0;i<num_peers;i++){
-        cerr << "Printing tree" << endl;
         nodes[i+1]->print_tree_to_file();
     }
 
