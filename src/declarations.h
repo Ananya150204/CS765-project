@@ -1,17 +1,18 @@
 #ifndef dec_H
 #define dec_H
 #include<bits/stdc++.h>
+#include "argparse.h"
 using namespace std;
 typedef long double ld;
 #define TXN_SIZE 8192    // bits
 #define MAX_BLK_SIZE 8388608    // bits
-
+#define MAX_TXNS 999
 
 extern int num_peers;
 extern double slow_percent;
 extern double low_cpu_percent;
-extern double transaction_mean_time;
-extern double block_mean_time;
+extern long double transaction_mean_time;
+extern long double block_mean_time;
 extern long double current_time;
 extern long int txn_counter;
 extern long int blk_counter;
@@ -79,13 +80,10 @@ class Block{
         long int blk_id;
         long int prev_blk_id;
         vector<Transaction*> transactions;
-        long int block_size;        // bits
-        long int depth;         // starting at 1
-        long double timestamp;
-        long int miner;       // Node_id of the miner
-
-        bool belongs_to_main_chain;
-        long double time_of_add_to_tree;
+        long int block_size=TXN_SIZE;        // bits
+        long int depth=0;         // Genesis block depth starting at 1
+        long double timestamp=0;
+        long int miner=-1;       // Node_id of the miner
 };
 
 

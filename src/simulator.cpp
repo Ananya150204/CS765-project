@@ -4,13 +4,13 @@
 // TODO: input parameters parse karne
 #include "declarations.h"
 
-int num_peers=20;
-double slow_percent=40;
-double low_cpu_percent=50;
-double transaction_mean_time=5000000;   // microseconds
-double block_mean_time=600000000;        // microseconds
-long double current_time=0;     // microseconds
-long double end_time = 60000000000;    // microseconds
+int num_peers;
+double slow_percent;
+double low_cpu_percent;
+long double transaction_mean_time;      // microseconds
+long double block_mean_time;            // microseconds
+long double current_time;               // microseconds
+long double end_time;                   // microseconds
 long int txn_counter = 0;
 long int blk_counter = 1;
 
@@ -19,7 +19,63 @@ unordered_map<int,Node*> nodes;
 set<Event*,decltype(comp)> events;
 random_device rd;
 mt19937 gen(rd());
-// mt19937 gen(42);
+
+void parse_arguments(int argc, char* argv[]) {
+    argparse::ArgumentParser program("Simulator");
+
+    program.add_argument("--num_peers")
+        .default_value(20)
+        .scan<'i', int>()
+        .help("Number of peers in the network");
+
+    program.add_argument("--slow_percent")
+        .default_value(80.0)
+        .scan<'g', double>()
+        .help("Percentage of slow nodes");
+
+    program.add_argument("--low_cpu_percent")
+        .default_value(20.0)
+        .scan<'g', double>()
+        .help("Percentage of nodes with low CPU power");
+
+    program.add_argument("--transaction_mean_time")
+        .default_value(5000000.0L)
+        .scan<'g', long double>()
+        .help("Mean transaction generation time (microseconds)");
+
+    program.add_argument("--block_mean_time")
+        .default_value(600000000.0L)
+        .scan<'g', long double>()
+        .help("Mean block generation time (microseconds)");
+
+    program.add_argument("--end_time")
+        .default_value(12000000000.0L)
+        .scan<'g', long double>()
+        .help("Simulation end time (microseconds)");
+
+    try {
+        program.parse_args(argc, argv);
+
+        num_peers = program.get<int>("--num_peers");
+        slow_percent = program.get<double>("--slow_percent");
+        low_cpu_percent = program.get<double>("--low_cpu_percent");
+        transaction_mean_time = program.get<long double>("--transaction_mean_time");
+        block_mean_time = program.get<long double>("--block_mean_time");
+        end_time = program.get<long double>("--end_time");
+
+        cout << "num_peers " << num_peers << endl;
+        cout << "slow_percent " << slow_percent << endl;
+        cout << "low_cpu_percent " << low_cpu_percent << endl;
+        cout << "transaction_mean_time " << transaction_mean_time << endl;
+        cout << "block_mean_time " << block_mean_time << endl;
+        cout << "end_time " << end_time << endl;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Argument parsing error: " << e.what() << std::endl;
+        std::cerr << program;
+        exit(1);
+    }
+}
 
 void generate_network(){
     vector<int> in_tree;
@@ -116,6 +172,7 @@ void run_events(){
 }
 
 int main(int argc, char* argv[]) {
+    parse_arguments(argc,argv);
     generate_nodes();
     generate_network();
 

@@ -57,14 +57,17 @@ Event* Node:: generate_block_event(long int id){       // boli lag rha h mining 
     // TODO: include transactions here itself because they are technically specified here only
     // TODO: set block size too
     int counter = 0;
+    vector<long int> temp = this->balances;
     for(auto it:this->mempool){
         counter++;
-        if(counter > MAX_BLK_SIZE/TXN_SIZE - 1){        // Including coinbase
+        if(counter > MAX_TXNS){        // Excluding coinbase
             break;
         }
-        if(this->balances[it.second->payer_id] >= it.second->num_coins){
+        if(temp[it.second->payer_id] >= it.second->num_coins){
             to_be_mined->transactions.push_back(it.second);
             to_be_mined->block_size+=TXN_SIZE;
+            temp[it.second->payer_id] -= it.second->num_coins;
+            temp[it.second->receiver_id] += it.second->num_coins;
         }
     }
     return e;
