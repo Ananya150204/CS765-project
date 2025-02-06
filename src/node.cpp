@@ -16,6 +16,7 @@ Node::Node(long int node_id, bool is_slow,bool is_low_cpu,long double hash_power
     this->longest_chain_leaf = genesis_block;
     this->latest_mining_event = 0;
     this->balances = vector<long int>(num_peers+1,0);
+    this->outFile.open("outputs/block_arrivals/" + to_string(this->node_id) + ".txt",ios::out);
 }
 
 Transaction* Node:: generate_transaction(){            
@@ -70,7 +71,7 @@ Event* Node:: generate_block_event(long int id){       // boli lag rha h mining 
 }
 
 void Node:: print_tree_to_file(){
-    ofstream outFile("outputs/blockchains/" + to_string(this->node_id) + ".txt",ios::app);
+    ofstream outFile("outputs/blockchains/" + to_string(this->node_id) + ".txt",ios::out);
     queue<long int> q;
     q.push(1);
     while(!q.empty()){
@@ -84,8 +85,7 @@ void Node:: print_tree_to_file(){
     outFile.close();
 }
 
-bool Node:: traverse_to_genesis_and_check(Block*b){
-    this->balances = vector<long int>(1+num_peers,0);
+bool Node:: traverse_to_genesis_and_check(Block*b,bool reset_balance){
     unordered_map<long int,long int> longest_chain;
     int curr_id = b->blk_id;
     int prev_id = b->prev_blk_id;
@@ -108,7 +108,7 @@ bool Node:: traverse_to_genesis_and_check(Block*b){
             long int payer = txn->payer_id;
             long int receiver = txn->receiver_id;
             long int num_coins = txn->num_coins;
-            if(this->balances[payer]<num_coins){
+            if(delta[payer]<num_coins){
             // TODO: If piazza reply says to remove the remaining invalid chain, we will do it later
                 return false;
             }
@@ -116,56 +116,80 @@ bool Node:: traverse_to_genesis_and_check(Block*b){
             delta[receiver] += num_coins;
         }
     }
-    for(auto i=0;i<num_peers;i++){
-        this->balances[i+1]+= delta[i+1];
+    if(reset_balance){
+        for(auto i=0;i<num_peers;i++){
+            this->balances[i+1] = delta[i+1];
+        }
     }
     return true;
 }
 
-void Node:: update_tree_and_add(Block*b,Block*prev_block,bool cond){
+void Node::remove_txns_from_mempool(Block*b){
+    for(auto t:b->transactions){
+        this->mempool.erase(t->txn_id);
+    }
+}
+
+bool Node:: update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_event){
     this->blk_id_to_pointer[b->blk_id] = b;
-    if(this->longest_chain_leaf->depth < 1+prev_block->depth && this->longest_chain_leaf!=prev_block){
-        if(!this->traverse_to_genesis_and_check(b)) {
-            this->blk_id_to_pointer.erase(b->blk_id);
-            return;
+    if(this->longest_chain_leaf!=prev_block){
+        if(this->longest_chain_leaf->depth < 1+prev_block->depth){
+            if(!this->traverse_to_genesis_and_check(b,true)) {
+                this->blk_id_to_pointer.erase(b->blk_id);
+                return false;
+            }
+        }
+        else{       // Ye tab jab new added block does not belong to the longest chain (includes forks too)
+            if(!this->traverse_to_genesis_and_check(b,false)) {
+                this->blk_id_to_pointer.erase(b->blk_id);
+                return false;
+            }
         }
     }
 
     this->blockchain_tree[b->prev_blk_id].insert(b->blk_id);
     b->depth = 1 + prev_block->depth;
+    this->remove_txns_from_mempool(b);
 
     if(this->longest_chain_leaf->depth < b->depth){
         this->longest_chain_leaf = b;
-        if(this->latest_mining_event && cond){
+        if(this->latest_mining_event && del_lat_mining_event){
             events.erase(this->latest_mining_event);
             long int cancel_hone_wala_id = this->latest_mining_event->blk->blk_id;
             delete this->latest_mining_event;
             events.insert(this->generate_block_event(cancel_hone_wala_id));
         }
     }
+    return true;
 }  
 
-bool Node:: check_balance_validity(Event*e){
-    if(e->blk->prev_blk_id == this->longest_chain_leaf->blk_id){
-        vector<long int> delta(num_peers+1,0);
-        delta[e->blk->miner]+=50;
-        for(Transaction* txn:e->blk->transactions){
+bool Node:: check_balance_validity(Block*b){
+    if(b->prev_blk_id == this->longest_chain_leaf->blk_id){
+        vector<long int> delta = this->balances;
+        delta[b->miner]+=50;
+        for(Transaction* txn:b->transactions){
             long int payer = txn->payer_id;
             long int receiver = txn->receiver_id;
             long int num_coins = txn->num_coins;
-            if(balances[payer]<num_coins){
+            if(delta[payer]<num_coins){
                 return false;
             }
             delta[payer] -= num_coins;
             delta[receiver] += num_coins;
         }
         for(auto i=0;i<num_peers;i++){
-            this->balances[i+1]+= delta[i+1];
+            this->balances[i+1] = delta[i+1];
         }
     }
     return true;
 }
 
-void Node:: print_stats(){
-    
+void Node:: print_stats(ofstream& outFile){
+    long int chain = 0;
+    long int curr_id = this->longest_chain_leaf->blk_id;
+    while(curr_id!=1){
+        chain+= (this->blk_id_to_pointer[curr_id]->miner == this->node_id);
+        curr_id = this->blk_id_to_pointer[curr_id]->prev_blk_id;
+    }
+    outFile << this->node_id << "," << chain << "," << this->total_blocks << "," << !this->is_low_cpu << "," << this->hash_power<< endl;
 }

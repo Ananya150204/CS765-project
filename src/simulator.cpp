@@ -4,13 +4,13 @@
 // TODO: input parameters parse karne
 #include "declarations.h"
 
-int num_peers=10;
-double slow_percent=10;
+int num_peers=20;
+double slow_percent=40;
 double low_cpu_percent=50;
 double transaction_mean_time=5000000;   // microseconds
 double block_mean_time=600000000;        // microseconds
 long double current_time=0;     // microseconds
-long double end_time = 2000000000;    // microseconds
+long double end_time = 60000000000;    // microseconds
 long int txn_counter = 0;
 long int blk_counter = 1;
 
@@ -18,8 +18,8 @@ unordered_map<int,unordered_map<int,int>> rhos;  // milliseconds
 unordered_map<int,Node*> nodes;
 set<Event*,decltype(comp)> events;
 random_device rd;
-// mt19937 gen(rd());
-mt19937 gen(42);
+mt19937 gen(rd());
+// mt19937 gen(42);
 
 void generate_network(){
     vector<int> in_tree;
@@ -131,9 +131,13 @@ int main(int argc, char* argv[]) {
     generate_events(true);
     run_events();
     
+    ofstream outFile2("outputs/peer_stats.csv",ios::out);
+    
+    outFile2 << "Node_id,Chain_Blocks,Total_Blocks,is_fast,hash_power" << endl;
     for(int i = 0;i<num_peers;i++){
         nodes[i+1]->print_tree_to_file();
-        nodes[i+1]->print_stats();
+        nodes[i+1]->print_stats(outFile2);
+        nodes[i+1]->outFile.close();
     }
 
     return 0;

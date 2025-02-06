@@ -31,6 +31,7 @@ $(OBJDIR):
 	mkdir -p "outputs"/
 	mkdir -p "outputs/blockchains"
 	mkdir -p "outputs/blockchain_images"
+	mkdir -p "outputs/block_arrivals"
 
 # Clean rule to remove the executable and object files
 clean:

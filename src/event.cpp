@@ -64,9 +64,12 @@ void Event::process_event(){
     }
     else if(this->event_type == "gen_block"){
         Node* cur_node = nodes[this->sender];
+        if(!cur_node->check_balance_validity(this->blk)) return;
         Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
 
-        cur_node->update_tree_and_add(this->blk,prev_block,false);
+        if(!cur_node->update_tree_and_add(this->blk,prev_block,false)) return;
+        cur_node->total_blocks++;
+        cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << endl;
 
         for(int j:cur_node->neighbours){
             long double travelling_time = find_travelling_time(this->sender,j,this->blk->block_size);
@@ -77,31 +80,35 @@ void Event::process_event(){
             e->receiver = j;
             events.insert(e);
         }
-        return ;
     }
     else if(this->event_type == "rec_block"){
         // TODO: validate block
         // If not valid return
         Node* cur_node = nodes[this->receiver];
-        if(!cur_node->check_balance_validity(this)) return;
+        if(!cur_node->check_balance_validity(this->blk)) return;
 
         // If block already there in the tree of receiver (of this event) then eat five star
         if(cur_node->blk_id_to_pointer.find(this->blk->blk_id) !=  cur_node->blk_id_to_pointer.end()) return; 
 
         if(cur_node->blk_id_to_pointer[this->blk->prev_blk_id]==NULL){
-            cur_node->orphaned_blocks.insert(this->blk);
+            cur_node->orphaned_blocks.insert({this->blk,current_time});
+            forward_blocks(cur_node,this->blk,this->sender);
             return;
         }
 
         Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
-        cur_node->update_tree_and_add(this->blk,prev_block);
+        if(!cur_node->update_tree_and_add(this->blk,prev_block)) return;
+        cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << endl;
 
-        for(auto b:cur_node->orphaned_blocks){
+        for(auto& [b, t]:cur_node->orphaned_blocks){
             if(cur_node->blk_id_to_pointer[b->prev_blk_id]){
-                cur_node->update_tree_and_add(b,cur_node->blk_id_to_pointer[b->prev_blk_id]);
-                cur_node->orphaned_blocks.erase(b);
+                cur_node->check_balance_validity(b);
+                if(cur_node->update_tree_and_add(b,cur_node->blk_id_to_pointer[b->prev_blk_id])){
+                    cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << endl;
+                }
+                cur_node->orphaned_blocks.erase({b,t});
             }
-            forward_blocks(cur_node,b,-1);
+            // Forwarding orphaned block here is not required since we are forwarding every valid block when it is received
             // We are ignoring bina baap ke baccho wale events ke sender as of now 
             // the receiving block will take care 
             // If required, we will add later

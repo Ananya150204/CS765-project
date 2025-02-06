@@ -52,24 +52,26 @@ class Node{
         Event* latest_mining_event;
         long double hash_power;
         long int total_blocks;
+        ofstream outFile;
 
         unordered_map<long int,unordered_set<long int>> blockchain_tree;       // tree[parent] = child
         unordered_map<long int,Block*> blk_id_to_pointer;       // 1 se genesis block start h 0 denotes null block
-        unordered_set<Block*> orphaned_blocks;
+        set<pair<Block*,long double>> orphaned_blocks;
         Block* longest_chain_leaf;
-
         unordered_set<int> neighbours;
         unordered_map<long int,Transaction*> mempool;
+        vector<long int>balances;
+
         Node(long int node_id, bool is_slow,bool is_low_cpu,long double hash_power);
         Transaction* generate_transaction();     
         Event* generate_trans_event();
         Event* generate_block_event(long int id=-1);
-        void update_tree_and_add(Block*b,Block*prev_block,bool cond = true);
-        bool check_balance_validity(Event*);
+        bool update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_event = true);
+        bool check_balance_validity(Block*);
         void print_tree_to_file();
-        bool traverse_to_genesis_and_check(Block*);
-        vector<long int>balances;
-        void print_stats();
+        bool traverse_to_genesis_and_check(Block*,bool);
+        void remove_txns_from_mempool(Block*);
+        void print_stats(ofstream&);
 };
 
 class Block{
@@ -81,6 +83,9 @@ class Block{
         long int depth;         // starting at 1
         long double timestamp;
         long int miner;       // Node_id of the miner
+
+        bool belongs_to_main_chain;
+        long double time_of_add_to_tree;
 };
 
 
