@@ -62,7 +62,7 @@ class Node{
         Transaction* generate_transaction();     
         Event* generate_trans_event();
         Event* generate_block_event(long int id=-1);
-        void update_tree_and_add(Block*b,Block*prev_block);
+        void update_tree_and_add(Block*b,Block*prev_block,bool cond = true);
         bool check_balance_validity(Event*);
         void print_tree_to_file();
         bool traverse_to_genesis_and_check(Block*);

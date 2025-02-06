@@ -18,10 +18,11 @@ Node::Node(long int node_id, bool is_slow,bool is_low_cpu){
 
 Transaction* Node:: generate_transaction(){            
     uniform_int_distribution<> dist(1, num_peers);
-    uniform_int_distribution<> dist2(1, this->balances[this->node_id]);
-
-    Transaction* t = new Transaction(++txn_counter,this->node_id,dist(gen),dist2(gen));
-    // cout << this->node_id << " generated id " << txn_counter-1 << endl;
+    Transaction* t = new Transaction(++txn_counter,this->node_id,dist(gen),0);
+    if(this->balances[this->node_id]>0){
+        uniform_int_distribution<> dist2(1, this->balances[this->node_id]);
+        t->num_coins = dist2(gen);
+    }
     return t;
 }
 
@@ -31,13 +32,10 @@ Event* Node:: generate_trans_event(){
     exponential_distribution<> exp_dist(1/transaction_mean_time);          
     long double value = exp_dist(gen);
     Event *e = new Event("gen_trans",value+current_time,t,this->node_id);
-    // cout << "Trans gen by "  << this->node_id << " at " << e->timestamp << endl;
     return e;
 }
 
 Event* Node:: generate_block_event(long int id){       // boli lag rha h mining slot ka success hua(tree me add hone) ya nahi wo yahi wala event process jab hoga tab pata chalega
-  
-    // cout<<"new block event created"<<endl;
  
     Block* to_be_mined = new Block();
     to_be_mined->miner = this->node_id;
@@ -45,7 +43,6 @@ Event* Node:: generate_block_event(long int id){       // boli lag rha h mining 
 
     if(id==-1) to_be_mined->blk_id  = ++blk_counter;
     else to_be_mined->blk_id = id;
-    // cout<<"BLK event started"<<endl;
 
     exponential_distribution<> dis(1/block_mean_time);
     to_be_mined->timestamp = current_time + dis(gen);
@@ -53,7 +50,7 @@ Event* Node:: generate_block_event(long int id){       // boli lag rha h mining 
     e->blk = to_be_mined;
     e->sender = this->node_id;
     this->latest_mining_event = e;
-    // cout << "Block: "<< e->blk->blk_id << " will be gen by "  << this->node_id << " at " << e->timestamp << endl;
+    
     // TODO: include transactions here itself because they are technically specified here only
     // TODO: set block size too
     int counter = 0;
@@ -94,39 +91,48 @@ bool Node:: traverse_to_genesis_and_check(Block*b){
         prev_id = this->blk_id_to_pointer[prev_id]->prev_blk_id;
     }
     curr_id = 1;
-
     // TODO: If piazza reply says to remove the remaining invalid chain, we will do it later
     while(longest_chain.contains(curr_id)){
         curr_id = longest_chain[curr_id];
         Block* cur_block = this->blk_id_to_pointer[curr_id];
-        balances[cur_block->miner] += 50;
+
+        // Delta is added so that jis block tk valid h wo saare txns ko account kr lenge
+        // par maan lo koi block invalid h to uske txns to ignore krne h na
+        vector<long int> delta(num_peers+1,0);
+        delta[cur_block->miner] += 50;         
         for(Transaction*txn:cur_block->transactions){
             long int payer = txn->payer_id;
             long int receiver = txn->receiver_id;
             long int num_coins = txn->num_coins;
-            if(balances[payer]<num_coins){
+            if(this->balances[payer]<num_coins){
                 return false;
             }
-            balances[payer] -= num_coins;
-            balances[receiver] += num_coins;
+            delta[payer] -= num_coins;
+            delta[receiver] += num_coins;
+        }
+        for(auto i=0;i<num_peers;i++){
+            this->balances[i+1]+= delta[i+1];
         }
     }
 
     return true;
 }
 
-void Node:: update_tree_and_add(Block*b,Block*prev_block){
-    if(this->longest_chain_leaf->depth < 1+prev_block->depth){
-        if(!traverse_to_genesis_and_check(b)) return;
+void Node:: update_tree_and_add(Block*b,Block*prev_block,bool cond){
+    this->blk_id_to_pointer[b->blk_id] = b;
+    if(this->longest_chain_leaf->depth < 1+prev_block->depth && this->longest_chain_leaf!=prev_block){
+        if(!this->traverse_to_genesis_and_check(b)) {
+            this->blk_id_to_pointer.erase(b->blk_id);
+            return;
+        }
     }
 
-    this->blk_id_to_pointer[b->blk_id] = b;
     this->blockchain_tree[b->prev_blk_id].insert(b->blk_id);
     b->depth = 1 + prev_block->depth;
 
     if(this->longest_chain_leaf->depth < b->depth){
         this->longest_chain_leaf = b;
-        if(this->latest_mining_event){
+        if(this->latest_mining_event && cond){
             events.erase(this->latest_mining_event);
             long int cancel_hone_wala_id = this->latest_mining_event->blk->blk_id;
             delete this->latest_mining_event;
@@ -137,7 +143,8 @@ void Node:: update_tree_and_add(Block*b,Block*prev_block){
 
 bool Node:: check_balance_validity(Event*e){
     if(e->blk->prev_blk_id == this->longest_chain_leaf->blk_id){
-        balances[e->blk->miner]+=50;
+        vector<long int> delta(num_peers+1,0);
+        delta[e->blk->miner]+=50;
         for(Transaction* txn:e->blk->transactions){
             long int payer = txn->payer_id;
             long int receiver = txn->receiver_id;
@@ -145,8 +152,11 @@ bool Node:: check_balance_validity(Event*e){
             if(balances[payer]<num_coins){
                 return false;
             }
-            balances[payer] -= num_coins;
-            balances[receiver] += num_coins;
+            delta[payer] -= num_coins;
+            delta[receiver] += num_coins;
+        }
+        for(auto i=0;i<num_peers;i++){
+            this->balances[i+1]+= delta[i+1];
         }
     }
     return true;

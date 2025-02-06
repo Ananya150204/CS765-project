@@ -66,7 +66,7 @@ void Event::process_event(){
         Node* cur_node = nodes[this->sender];
         Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
 
-        cur_node->update_tree_and_add(this->blk,prev_block);
+        cur_node->update_tree_and_add(this->blk,prev_block,false);
 
         for(int j:cur_node->neighbours){
             long double travelling_time = find_travelling_time(this->sender,j,this->blk->block_size);
@@ -77,6 +77,7 @@ void Event::process_event(){
             e->receiver = j;
             events.insert(e);
         }
+        return ;
     }
     else if(this->event_type == "rec_block"){
         // TODO: validate block
