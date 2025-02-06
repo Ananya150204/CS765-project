@@ -1,9 +1,11 @@
 #include "declarations.h"
 
-Node::Node(long int node_id, bool is_slow,bool is_low_cpu){
+Node::Node(long int node_id, bool is_slow,bool is_low_cpu,long double hash_power){
     this->node_id = node_id;
     this->is_slow = is_slow;
     this->is_low_cpu = is_low_cpu;
+    this->hash_power = hash_power;
+    this->total_blocks = 0;
     
     Block* genesis_block = new Block();
     genesis_block->blk_id = 1;
@@ -44,7 +46,7 @@ Event* Node:: generate_block_event(long int id){       // boli lag rha h mining 
     if(id==-1) to_be_mined->blk_id  = ++blk_counter;
     else to_be_mined->blk_id = id;
 
-    exponential_distribution<> dis(1/block_mean_time);
+    exponential_distribution<> dis(this->hash_power/block_mean_time);
     to_be_mined->timestamp = current_time + dis(gen);
     Event *e = new Event("gen_block",to_be_mined->timestamp);
     e->blk = to_be_mined;
@@ -59,14 +61,16 @@ Event* Node:: generate_block_event(long int id){       // boli lag rha h mining 
         if(counter > MAX_BLK_SIZE/TXN_SIZE - 1){        // Including coinbase
             break;
         }
-        to_be_mined->transactions.push_back(it.second);
-        to_be_mined->block_size+=TXN_SIZE;
+        if(this->balances[it.second->payer_id] >= it.second->num_coins){
+            to_be_mined->transactions.push_back(it.second);
+            to_be_mined->block_size+=TXN_SIZE;
+        }
     }
     return e;
 }
 
 void Node:: print_tree_to_file(){
-    ofstream outFile("outputs/" + to_string(this->node_id) + ".txt",ios::app);
+    ofstream outFile("outputs/blockchains/" + to_string(this->node_id) + ".txt",ios::app);
     queue<long int> q;
     q.push(1);
     while(!q.empty()){
@@ -91,30 +95,30 @@ bool Node:: traverse_to_genesis_and_check(Block*b){
         prev_id = this->blk_id_to_pointer[prev_id]->prev_blk_id;
     }
     curr_id = 1;
-    // TODO: If piazza reply says to remove the remaining invalid chain, we will do it later
+    // Delta is added so that jis block tk valid h wo saare txns ko account kr lenge
+    // par maan lo koi block invalid h to uske txns to ignore krne h na
+    // Basically pura chain hi ignore ho jayega and balances update nahi honge
+    vector<long int> delta(num_peers+1,0);
     while(longest_chain.contains(curr_id)){
         curr_id = longest_chain[curr_id];
         Block* cur_block = this->blk_id_to_pointer[curr_id];
 
-        // Delta is added so that jis block tk valid h wo saare txns ko account kr lenge
-        // par maan lo koi block invalid h to uske txns to ignore krne h na
-        vector<long int> delta(num_peers+1,0);
         delta[cur_block->miner] += 50;         
         for(Transaction*txn:cur_block->transactions){
             long int payer = txn->payer_id;
             long int receiver = txn->receiver_id;
             long int num_coins = txn->num_coins;
             if(this->balances[payer]<num_coins){
+            // TODO: If piazza reply says to remove the remaining invalid chain, we will do it later
                 return false;
             }
             delta[payer] -= num_coins;
             delta[receiver] += num_coins;
         }
-        for(auto i=0;i<num_peers;i++){
-            this->balances[i+1]+= delta[i+1];
-        }
     }
-
+    for(auto i=0;i<num_peers;i++){
+        this->balances[i+1]+= delta[i+1];
+    }
     return true;
 }
 
@@ -160,4 +164,8 @@ bool Node:: check_balance_validity(Event*e){
         }
     }
     return true;
+}
+
+void Node:: print_stats(){
+    
 }

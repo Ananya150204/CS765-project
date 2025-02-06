@@ -50,6 +50,8 @@ class Node{
         long int node_id;
         bool is_slow,is_low_cpu;
         Event* latest_mining_event;
+        long double hash_power;
+        long int total_blocks;
 
         unordered_map<long int,unordered_set<long int>> blockchain_tree;       // tree[parent] = child
         unordered_map<long int,Block*> blk_id_to_pointer;       // 1 se genesis block start h 0 denotes null block
@@ -58,7 +60,7 @@ class Node{
 
         unordered_set<int> neighbours;
         unordered_map<long int,Transaction*> mempool;
-        Node(long int node_id, bool is_slow,bool is_low_cpu);
+        Node(long int node_id, bool is_slow,bool is_low_cpu,long double hash_power);
         Transaction* generate_transaction();     
         Event* generate_trans_event();
         Event* generate_block_event(long int id=-1);
@@ -67,6 +69,7 @@ class Node{
         void print_tree_to_file();
         bool traverse_to_genesis_and_check(Block*);
         vector<long int>balances;
+        void print_stats();
 };
 
 class Block{

@@ -1,3 +1,7 @@
+// TODO: mempool me se transactions hatana h gen_block and rec_block me se
+// TODO: peer stats daalne h 
+// TODO: block arrivals
+// TODO: input parameters parse karne
 #include "declarations.h"
 
 int num_peers=10;
@@ -68,15 +72,21 @@ void generate_network(){
 }
 
 void generate_nodes(){
+    long int low_cpu_nodes = low_cpu_percent*num_peers/100;
+    long int high_cpu_nodes = num_peers - low_cpu_nodes;
+    long double h = double(1)/(10*high_cpu_nodes+low_cpu_nodes);
+
     for(int i=0;i<num_peers;i++){
-        if(i<slow_percent*num_peers/100) nodes[i+1]=new Node(i+1,true,false);
-        else nodes[i+1]=new Node(i+1,false,false);
+        if(i<slow_percent*num_peers/100) nodes[i+1]=new Node(i+1,true,false,10*h);
+        else nodes[i+1]=new Node(i+1,false,false,10*h);
     }
     vector<int> temp;
     for(int i=0;i<num_peers;i++) temp.push_back(i+1);
     shuffle(temp.begin(),temp.end(),gen);
+
     for(int i=0;i<low_cpu_percent*num_peers/100;i++){
         nodes[temp[i]]->is_low_cpu = true;
+        nodes[temp[i]]->hash_power /= 10;
     }
 }
 
@@ -108,12 +118,22 @@ void run_events(){
 int main(int argc, char* argv[]) {
     generate_nodes();
     generate_network();
+
+    ofstream outFile("outputs/peer_network_edgelist.txt",ios::app);
+    for(int i=0;i<num_peers;i++){
+        for(int j:nodes[i+1]->neighbours){
+            outFile << i+1 << " " << j << endl;
+        }
+    }
+    outFile.close();
+
     generate_events(false);
     generate_events(true);
     run_events();
     
     for(int i = 0;i<num_peers;i++){
         nodes[i+1]->print_tree_to_file();
+        nodes[i+1]->print_stats();
     }
 
     return 0;
