@@ -52,11 +52,11 @@ void parse_arguments(int argc, char* argv[]) {
     try {
         program.parse_args(argc, argv);
 
-        num_peers = program.get<int>("--num_peers");
+        num_peers = program.get<int>("--peers");
         slow_percent = program.get<double>("--slow_percent");
         low_cpu_percent = program.get<double>("--low_cpu_percent");
-        transaction_mean_time = program.get<long double>("--transaction_mean_time");
-        block_mean_time = program.get<long double>("--block_mean_time");
+        transaction_mean_time = program.get<long double>("--txn_interarrival");
+        block_mean_time = program.get<long double>("--block_interarrival_time");
         end_time = program.get<long double>("--end_time");
 
     } catch (const exception& e) {
