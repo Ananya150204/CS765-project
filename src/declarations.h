@@ -6,7 +6,7 @@ using namespace std;
 typedef long double ld;
 #define TXN_SIZE 8192    // bits
 #define MAX_BLK_SIZE 8388608    // bits
-#define MAX_TXNS 999
+#define MAX_TXNS 1023
 
 extern int num_peers;
 extern double slow_percent;

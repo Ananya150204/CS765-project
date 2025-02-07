@@ -36,6 +36,8 @@ void forward_blocks(Node*cur_node,Block*b,long int event_sender){
 
 void Event::process_event(){
     if(this->event_type == "gen_trans"){
+        if(this->txn->num_coins==0) return;
+
         nodes[this->sender]->mempool.insert({this->txn->txn_id,this->txn});
 
         for(int j:nodes[this->sender]->neighbours){
@@ -49,6 +51,7 @@ void Event::process_event(){
         if(nodes[this->receiver]->mempool.find(this->txn->txn_id) != nodes[this->receiver]->mempool.end()){
             return;
         } 
+        if(this->txn->num_coins==0) return;
 
         nodes[this->receiver]->mempool.insert({this->txn->txn_id,this->txn});
 
