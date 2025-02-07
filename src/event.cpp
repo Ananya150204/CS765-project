@@ -1,7 +1,5 @@
 #include "declarations.h"
 
-// gen_trans, rec_trans, for_trans, broad_mined_block, for_block, rec_block
-
 Event::Event(string event_type,ld timestamp,Transaction*txn,int sender){
     this->event_type = event_type;
     this->timestamp = timestamp;
@@ -9,6 +7,8 @@ Event::Event(string event_type,ld timestamp,Transaction*txn,int sender){
     this->sender = sender;
 }
 
+// Calculates the time taken to travel from node i to node j given a particular
+// message size
 long double find_travelling_time(int i,int j,int msg_size){
     long double travelling_time = rhos[i][j]*1000;
     long double c_i_j = 100;
@@ -17,10 +17,11 @@ long double find_travelling_time(int i,int j,int msg_size){
     }
     travelling_time += msg_size/c_i_j;
     exponential_distribution<> dis(96000/c_i_j);
-    travelling_time += dis(gen); //d_i_j
+    travelling_time += dis(gen); // d_i_j sampled from exp distribution
     return travelling_time;
 }
 
+// Forwards the block to all its immediate neighbors in the graph
 void forward_blocks(Node*cur_node,Block*b,long int event_sender){
     for(int j:cur_node->neighbours){
         if(j==event_sender) continue;
@@ -34,6 +35,9 @@ void forward_blocks(Node*cur_node,Block*b,long int event_sender){
     }
 }
 
+
+// Deals with the various types of event as :
+// gen_trans, rec_trans, gen_block, rec_block
 void Event::process_event(){
     if(this->event_type == "gen_trans"){
         if(this->txn->num_coins==0) return;
@@ -85,12 +89,11 @@ void Event::process_event(){
         }
     }
     else if(this->event_type == "rec_block"){
-        // TODO: validate block
-        // If not valid return
+        // If not valid, return.
         Node* cur_node = nodes[this->receiver];
         if(!cur_node->check_balance_validity(this->blk)) return;
 
-        // If block already there in the tree of receiver (of this event) then eat five star
+        // If block already there in the tree of receiver (of this event) then do nothing.
         if(cur_node->blk_id_to_pointer.find(this->blk->blk_id) !=  cur_node->blk_id_to_pointer.end()) return; 
 
         if(cur_node->blk_id_to_pointer[this->blk->prev_blk_id]==NULL){
@@ -111,10 +114,7 @@ void Event::process_event(){
                 }
                 cur_node->orphaned_blocks.erase({b,t});
             }
-            // Forwarding orphaned block here is not required since we are forwarding every valid block when it is received
-            // We are ignoring bina baap ke baccho wale events ke sender as of now 
-            // the receiving block will take care 
-            // If required, we will add later
+            // Forwarding orphaned block here is not required since we are forwarding every valid block when it is received.
         }
 
         forward_blocks(cur_node,this->blk,this->sender);
