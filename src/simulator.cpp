@@ -23,32 +23,32 @@ mt19937 gen(rd());
 void parse_arguments(int argc, char* argv[]) {
     argparse::ArgumentParser program("Simulator");
 
-    program.add_argument("--num_peers")
+    program.add_argument("-n","--peers")
         .default_value(20)
         .scan<'i', int>()
         .help("Number of peers in the network");
 
-    program.add_argument("--slow_percent")
+    program.add_argument("-z0","--slow_percent")
         .default_value(80.0)
         .scan<'g', double>()
         .help("Percentage of slow nodes");
 
-    program.add_argument("--low_cpu_percent")
+    program.add_argument("-z1","--low_cpu_percent")
         .default_value(20.0)
         .scan<'g', double>()
         .help("Percentage of nodes with low CPU power");
 
-    program.add_argument("--transaction_mean_time")
+    program.add_argument("-Ttx","--txn_interarrival")
         .default_value(5000000.0L)
         .scan<'g', long double>()
         .help("Mean transaction generation time (microseconds)");
 
-    program.add_argument("--block_mean_time")
+    program.add_argument("-I","--block_interarrival_time")
         .default_value(600000000.0L)
         .scan<'g', long double>()
         .help("Mean block generation time (microseconds)");
 
-    program.add_argument("--end_time")
+    program.add_argument("-e","--end_time")
         .default_value(12000000000.0L)
         .scan<'g', long double>()
         .help("Simulation end time (microseconds)");

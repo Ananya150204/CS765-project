@@ -53,13 +53,6 @@ def draw_peer_network(file, adversary=True):
     plt.close()
 
 
-
-def R_pool(alpha, gamma):
-    numerator = (alpha * (1 - alpha) * (1 - alpha) * (4 * alpha + gamma * (1 - 2 * alpha)) - alpha * alpha * alpha)
-    denominator = 1 - alpha * (1 + alpha * (2 - alpha))
-    return numerator / denominator
-
-
 base = os.path.join(dirname(dirname(abspath(__file__))), 'outputs')
 network_file = os.path.join(base, 'peer_network_edgelist.txt')
 draw_peer_network(network_file)
@@ -67,7 +60,6 @@ draw_peer_network(network_file)
 peer = int(sys.argv[1]) if len(sys.argv) > 1 else -1
 num_peers = len(os.listdir(os.path.join(base, 'blockchains')))
 peer = (peer % num_peers + num_peers) % num_peers
-# adversary = num_peers
 
 for node in range(num_peers):
     peer = f'{node + 1}.txt'
