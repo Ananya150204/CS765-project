@@ -1,6 +1,6 @@
-num_peers 30
-slow_percent 50
-low_cpu_percent 50
+num_peers 50
+slow_percent 80
+low_cpu_percent 20
 transaction_mean_time 5e+06
 block_mean_time 5e+08
 end_time 1.2e+10

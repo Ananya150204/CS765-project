@@ -63,12 +63,12 @@ void parse_arguments(int argc, char* argv[]) {
         block_mean_time = program.get<long double>("--block_mean_time");
         end_time = program.get<long double>("--end_time");
 
-        cout << "num_peers " << num_peers << endl;
-        cout << "slow_percent " << slow_percent << endl;
-        cout << "low_cpu_percent " << low_cpu_percent << endl;
-        cout << "transaction_mean_time " << transaction_mean_time << endl;
-        cout << "block_mean_time " << block_mean_time << endl;
-        cout << "end_time " << end_time << endl;
+        // cout << "num_peers " << num_peers << endl;
+        // cout << "slow_percent " << slow_percent << endl;
+        // cout << "low_cpu_percent " << low_cpu_percent << endl;
+        // cout << "transaction_mean_time " << transaction_mean_time << endl;
+        // cout << "block_mean_time " << block_mean_time << endl;
+        // cout << "end_time " << end_time << endl;
 
     } catch (const std::exception& e) {
         std::cerr << "Argument parsing error: " << e.what() << std::endl;
