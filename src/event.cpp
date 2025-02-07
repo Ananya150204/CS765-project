@@ -104,7 +104,7 @@ void Event::process_event(){
 
         Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
         if(!cur_node->update_tree_and_add(this->blk,prev_block)) return;
-        cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << endl;
+        cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << "," << this->blk->block_size/TXN_SIZE << endl;
 
         for(auto& [b, t]:cur_node->orphaned_blocks){
             if(cur_node->blk_id_to_pointer[b->prev_blk_id]){
