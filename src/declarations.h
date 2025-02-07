@@ -4,8 +4,8 @@
 #include "argparse.h"
 using namespace std;
 typedef long double ld;
-#define TXN_SIZE 8192    // bits
-#define MAX_BLK_SIZE 8388608    // bits
+#define TXN_SIZE 8192    // in bits
+#define MAX_BLK_SIZE 8388608    // in bits
 #define MAX_TXNS 1023
 
 extern int num_peers;
@@ -56,7 +56,7 @@ class Node{
         ofstream outFile;
 
         unordered_map<long int,unordered_set<long int>> blockchain_tree;       // tree[parent] = child
-        unordered_map<long int,Block*> blk_id_to_pointer;       // 1 se genesis block start h 0 denotes null block
+        unordered_map<long int,Block*> blk_id_to_pointer;       // 1 is the block id of genesis block and 0 denotes null block
         set<pair<Block*,long double>> orphaned_blocks;
         Block* longest_chain_leaf;
         unordered_set<int> neighbours;
@@ -81,7 +81,7 @@ class Block{
         long int prev_blk_id;
         vector<Transaction*> transactions;
         long int block_size=TXN_SIZE;        // bits
-        long int depth=0;         // Genesis block depth starting at 1
+        long int depth=0;         // placeholder value
         long double timestamp=0;
         long int miner=-1;       // Node_id of the miner
 };

@@ -20,6 +20,7 @@ Node::Node(long int node_id, bool is_slow,bool is_low_cpu,long double hash_power
     this->outFile << "Block_ID" << "," << "Prev_Blk_ID" << "," << "Arrival_time" << "," << "Time_addn_to_tree" << "," << "Num_txns" << endl;
 }
 
+// Generates transactions as per the problem specifications.
 Transaction* Node:: generate_transaction(){            
     uniform_int_distribution<> dist(1, num_peers);
     Transaction* t = new Transaction(++txn_counter,this->node_id,dist(gen),0);
@@ -30,6 +31,8 @@ Transaction* Node:: generate_transaction(){
     return t;
 }
 
+
+//  Generates an event in which a transaction is created.
 Event* Node:: generate_trans_event(){
     Transaction* t = generate_transaction();
     
@@ -39,8 +42,11 @@ Event* Node:: generate_trans_event(){
     return e;
 }
 
-Event* Node:: generate_block_event(long int id){       // boli lag rha h mining slot ka success hua(tree me add hone) ya nahi wo yahi wala event process jab hoga tab pata chalega
- 
+
+// The block will be mined at T_k time after the current time. 
+// Whether this block gets added to the tree will be decided at the time of
+// processing this event.
+Event* Node:: generate_block_event(long int id){       
     Block* to_be_mined = new Block();
     to_be_mined->miner = this->node_id;
     to_be_mined->prev_blk_id = this->longest_chain_leaf->blk_id;
@@ -55,8 +61,6 @@ Event* Node:: generate_block_event(long int id){       // boli lag rha h mining 
     e->sender = this->node_id;
     this->latest_mining_event = e;
     
-    // TODO: include transactions here itself because they are technically specified here only
-    // TODO: set block size too
     int counter = 0;
     vector<long int> temp = this->balances;
     for(auto it:this->mempool){
@@ -89,6 +93,11 @@ void Node:: print_tree_to_file(){
     outFile.close();
 }
 
+// If the block is not getting added to the current longest chain,the
+// function will validate the block and update the current node's balance
+// if required. If the block is added to the current longest chain, we do
+// not need to travel back to the genesis block since we have balances stored
+// So, check_balance_validity function does the job.
 bool Node:: traverse_to_genesis_and_check(Block*b,bool reset_balance){
     unordered_map<long int,long int> longest_chain;
     int curr_id = b->blk_id;
@@ -99,9 +108,8 @@ bool Node:: traverse_to_genesis_and_check(Block*b,bool reset_balance){
         prev_id = this->blk_id_to_pointer[prev_id]->prev_blk_id;
     }
     curr_id = 1;
-    // Delta is added so that jis block tk valid h wo saare txns ko account kr lenge
-    // par maan lo koi block invalid h to uske txns to ignore krne h na
-    // Basically pura chain hi ignore ho jayega and balances update nahi honge
+    // We do not know whether the current block is valid, so we need to
+    // keep a copy of the balances while checking the block validity.
     vector<long int> delta(num_peers+1,0);
     while(longest_chain.contains(curr_id)){
         curr_id = longest_chain[curr_id];
@@ -113,7 +121,6 @@ bool Node:: traverse_to_genesis_and_check(Block*b,bool reset_balance){
             long int receiver = txn->receiver_id;
             long int num_coins = txn->num_coins;
             if(delta[payer]<num_coins){
-            // TODO: If piazza reply says to remove the remaining invalid chain, we will do it later
                 return false;
             }
             delta[payer] -= num_coins;
@@ -134,6 +141,12 @@ void Node::remove_txns_from_mempool(Block*b){
     }
 }
 
+// Updates the blockchain tree.
+// In case the block is added to the current longest chain, validity is checked
+// using the check_balance_validity function which is called during event processing
+// Else, travel_to_genesis_and_check has to be used which is called from here
+// In case of a block receiving event on the current longest chain, 
+// the node's next mining event will be cancelled.
 bool Node:: update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_event){
     this->blk_id_to_pointer[b->blk_id] = b;
     if(this->longest_chain_leaf!=prev_block){
@@ -143,7 +156,7 @@ bool Node:: update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_eve
                 return false;
             }
         }
-        else{       // Ye tab jab new added block does not belong to the longest chain (includes forks too)
+        else{
             if(!this->traverse_to_genesis_and_check(b,false)) {
                 this->blk_id_to_pointer.erase(b->blk_id);
                 return false;
@@ -167,6 +180,7 @@ bool Node:: update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_eve
     return true;
 }  
 
+// Already explained above -:)
 bool Node:: check_balance_validity(Block*b){
     if(b->prev_blk_id == this->longest_chain_leaf->blk_id){
         vector<long int> delta = this->balances;

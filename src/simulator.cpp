@@ -1,7 +1,3 @@
-// TODO: mempool me se transactions hatana h gen_block and rec_block me se
-// TODO: peer stats daalne h 
-// TODO: block arrivals
-// TODO: input parameters parse karne
 #include "declarations.h"
 
 int num_peers;
@@ -63,20 +59,18 @@ void parse_arguments(int argc, char* argv[]) {
         block_mean_time = program.get<long double>("--block_mean_time");
         end_time = program.get<long double>("--end_time");
 
-        // cout << "num_peers " << num_peers << endl;
-        // cout << "slow_percent " << slow_percent << endl;
-        // cout << "low_cpu_percent " << low_cpu_percent << endl;
-        // cout << "transaction_mean_time " << transaction_mean_time << endl;
-        // cout << "block_mean_time " << block_mean_time << endl;
-        // cout << "end_time " << end_time << endl;
-
-    } catch (const std::exception& e) {
-        std::cerr << "Argument parsing error: " << e.what() << std::endl;
-        std::cerr << program;
+    } catch (const exception& e) {
+        cerr << "Argument parsing error: " << e.what() << endl;
+        cerr << program;
         exit(1);
     }
 }
 
+// Implements the network topology.
+// First of all the spanning tree is generated randomly.
+// This ensures that the graph is connected.
+// Then the requirement that the degree of each node is between 3 and 6 
+// (bounds included) is satisfied individually for each node.
 void generate_network(){
     vector<int> in_tree;
     vector<int> out_tree;
@@ -127,6 +121,8 @@ void generate_network(){
     }
 }
 
+
+// The nodes are initialised with the mentioned parameters randomly. 
 void generate_nodes(){
     long int low_cpu_nodes = low_cpu_percent*num_peers/100;
     long int high_cpu_nodes = num_peers - low_cpu_nodes;
@@ -146,6 +142,7 @@ void generate_nodes(){
     }
 }
 
+// Generates starting events for the simulation.
 void generate_events(bool block){
     for(int i=0;i<num_peers;i++){
         if(block) events.insert(nodes[i+1]->generate_block_event());
@@ -153,6 +150,7 @@ void generate_events(bool block){
     }
 }
 
+// Invoke the events with the earliest event coming first.
 void run_events(){
     while(!events.empty() && current_time<= end_time){
         Event* e = *(events.begin());
