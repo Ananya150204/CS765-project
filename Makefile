@@ -6,7 +6,6 @@ CXXFLAGS = -std=c++23
 TARGET = simulator
 OBJDIR = build
 SRC = src
-OUTPUTS = outputs
 
 # List of source files (using a wildcard)
 SRCS = $(wildcard $(SRC)/*.cpp)
@@ -23,20 +22,20 @@ $(TARGET): $(OBJS)
 
 # Pattern rule: compile .cpp files to object files in OBJDIR.
 # The pipe symbol (|) indicates that $(OBJDIR) is an order-only prerequisite.
-$(OBJDIR)/%.o: $(SRC)/%.cpp $(SRC)/declarations.h | $(OBJDIR) $(OUTPUTS)
+$(OBJDIR)/%.o: $(SRC)/%.cpp $(SRC)/declarations.h | $(OBJDIR)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Ensure that the OBJDIR directory exists
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
-
-$(OUTPUTS):
-	mkdir -p $(OUTPUTS)
-
+	mkdir -p "outputs"/
+	mkdir -p "outputs/blockchains"
+	mkdir -p "outputs/blockchain_images"
+	mkdir -p "outputs/block_arrivals"
 
 # Clean rule to remove the executable and object files
 clean:
 	rm -f $(TARGET) $(OBJS)
 	rm -rf $(OBJDIR)
-	rm -rf $(OUTPUTS)
+	rm -rf "outputs"
 	rm -f a.out

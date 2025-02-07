@@ -21,13 +21,24 @@ long double find_travelling_time(int i,int j,int msg_size){
     return travelling_time;
 }
 
+void forward_blocks(Node*cur_node,Block*b,long int event_sender){
+    for(int j:cur_node->neighbours){
+        if(j==event_sender) continue;
+        long double travelling_time = find_travelling_time(cur_node->node_id,j,b->block_size);
+        Event* e = new Event("rec_block",current_time+travelling_time);
+        e->sender = cur_node->node_id;
+        e->blk = b;
+
+        e->receiver = j;
+        events.insert(e);
+    }
+}
+
 void Event::process_event(){
     if(this->event_type == "gen_trans"){
-        nodes[this->sender]->mempool.insert({this->txn->txn_id,this->txn});
+        if(this->txn->num_coins==0) return;
 
-        // ofstream outFile("outputs/" + to_string(this->sender) + ".txt",ios::app);
-        // outFile << this->timestamp << " generated " << " txn_id " << this->txn->txn_id << endl;
-        // outFile.close();
+        nodes[this->sender]->mempool.insert({this->txn->txn_id,this->txn});
 
         for(int j:nodes[this->sender]->neighbours){
             long double travelling_time = find_travelling_time(this->sender,j,TXN_SIZE);
@@ -39,17 +50,15 @@ void Event::process_event(){
     else if(this->event_type == "rec_trans"){
         if(nodes[this->receiver]->mempool.find(this->txn->txn_id) != nodes[this->receiver]->mempool.end()){
             return;
-        } 
+        }
+        if(this->txn->num_coins==0) return;
 
         nodes[this->receiver]->mempool.insert({this->txn->txn_id,this->txn});
-
-        // ofstream outFile("outputs/" + to_string(this->receiver) + ".txt",ios::app);
-        // outFile << this->timestamp << " received by " << this->sender << " with txn_id " << this->txn->txn_id << endl;
-        // outFile.close();
 
         int event_sender = this->sender;
         for(int j:nodes[sender]->neighbours){
             if(j==event_sender) continue;
+
             long double travelling_time = find_travelling_time(this->receiver,j,TXN_SIZE);
             Event* e = new Event("rec_trans",this->timestamp+travelling_time,this->txn,this->receiver);
             e->receiver = j;
@@ -58,20 +67,12 @@ void Event::process_event(){
     }
     else if(this->event_type == "gen_block"){
         Node* cur_node = nodes[this->sender];
+        if(!cur_node->check_balance_validity(this->blk)) return;
         Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
 
-        cur_node->blk_id_to_pointer[this->blk->blk_id] = this->blk;
-        cur_node->blockchain_tree[this->blk->prev_blk_id].push_back(this->blk->blk_id);
-
-        this->blk->depth = 1 + prev_block->depth;
-
-        // TODO: for ties
-        // This if will always be true since blocks are always mined on the longest chain
-        // If somehow the chain breaks before then this event would be cancelled and would not have taken place
-        if(cur_node->longest_chain_leaf->depth < this->blk->depth){
-            cur_node->longest_chain_leaf = this->blk;
-            cur_node->last_blk_rec_time = this->timestamp;
-        }
+        if(!cur_node->update_tree_and_add(this->blk,prev_block,false)) return;
+        cur_node->total_blocks++;
+        cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << endl;
 
         for(int j:cur_node->neighbours){
             long double travelling_time = find_travelling_time(this->sender,j,this->blk->block_size);
@@ -86,40 +87,36 @@ void Event::process_event(){
     else if(this->event_type == "rec_block"){
         // TODO: validate block
         // If not valid return
+        Node* cur_node = nodes[this->receiver];
+        if(!cur_node->check_balance_validity(this->blk)) return;
 
         // If block already there in the tree of receiver (of this event) then eat five star
-        if(nodes[this->receiver]->blk_id_to_pointer.find(this->blk->blk_id) != 
-        nodes[this->receiver]->blk_id_to_pointer.end()){
+        if(cur_node->blk_id_to_pointer.find(this->blk->blk_id) !=  cur_node->blk_id_to_pointer.end()) return; 
+
+        if(cur_node->blk_id_to_pointer[this->blk->prev_blk_id]==NULL){
+            cur_node->orphaned_blocks.insert({this->blk,current_time});
+            forward_blocks(cur_node,this->blk,this->sender);
             return;
-        } 
+        }
 
-        Node* cur_node = nodes[this->receiver];
         Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
-        this->blk->depth = 1 + prev_block->depth;
+        if(!cur_node->update_tree_and_add(this->blk,prev_block)) return;
+        cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << endl;
 
-        cur_node->blk_id_to_pointer[this->blk->blk_id] = this->blk;
-        cur_node->blockchain_tree[this->blk->prev_blk_id].push_back(this->blk->blk_id);
-
-        // TODO: for ties
-        if(cur_node->longest_chain_leaf->depth < this->blk->depth){
-            cur_node->longest_chain_leaf = this->blk;
-            cur_node->last_blk_rec_time = this->timestamp;  
-            if(cur_node->latest_mining_event){
-                events.erase(cur_node->latest_mining_event);
-                long int cancel_hone_wala_id = cur_node->latest_mining_event->blk->blk_id;
-                events.insert(cur_node->generate_block_event(cancel_hone_wala_id));
+        for(auto& [b, t]:cur_node->orphaned_blocks){
+            if(cur_node->blk_id_to_pointer[b->prev_blk_id]){
+                cur_node->check_balance_validity(b);
+                if(cur_node->update_tree_and_add(b,cur_node->blk_id_to_pointer[b->prev_blk_id])){
+                    cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << endl;
+                }
+                cur_node->orphaned_blocks.erase({b,t});
             }
+            // Forwarding orphaned block here is not required since we are forwarding every valid block when it is received
+            // We are ignoring bina baap ke baccho wale events ke sender as of now 
+            // the receiving block will take care 
+            // If required, we will add later
         }
 
-        for(int j:cur_node->neighbours){
-            if(j==this->sender) continue;
-            long double travelling_time = find_travelling_time(this->sender,j,this->blk->block_size);
-            Event* e = new Event("rec_block",this->timestamp+travelling_time);
-            e->sender = this->sender;
-            e->blk = this->blk;
-
-            e->receiver = j;
-            events.insert(e);
-        }
+        forward_blocks(cur_node,this->blk,this->sender);
     }
 }
