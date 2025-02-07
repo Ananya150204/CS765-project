@@ -17,6 +17,7 @@ Node::Node(long int node_id, bool is_slow,bool is_low_cpu,long double hash_power
     this->latest_mining_event = 0;
     this->balances = vector<long int>(num_peers+1,0);
     this->outFile.open("outputs/block_arrivals/" + to_string(this->node_id) + ".txt",ios::out);
+    this->outFile << "Block_ID" << "," << "Prev_Blk_ID" << "," << "Arrival_time" << "," << "Time_addn_to_tree" << endl;
 }
 
 Transaction* Node:: generate_transaction(){            
