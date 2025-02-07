@@ -50,7 +50,7 @@ void Event::process_event(){
     else if(this->event_type == "rec_trans"){
         if(nodes[this->receiver]->mempool.find(this->txn->txn_id) != nodes[this->receiver]->mempool.end()){
             return;
-        } 
+        }
         if(this->txn->num_coins==0) return;
 
         nodes[this->receiver]->mempool.insert({this->txn->txn_id,this->txn});

@@ -152,10 +152,10 @@ bool Node:: update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_eve
 
     this->blockchain_tree[b->prev_blk_id].insert(b->blk_id);
     b->depth = 1 + prev_block->depth;
-    this->remove_txns_from_mempool(b);
 
     if(this->longest_chain_leaf->depth < b->depth){
         this->longest_chain_leaf = b;
+        this->remove_txns_from_mempool(b);
         if(this->latest_mining_event && del_lat_mining_event){
             events.erase(this->latest_mining_event);
             long int cancel_hone_wala_id = this->latest_mining_event->blk->blk_id;
