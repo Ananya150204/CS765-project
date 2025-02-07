@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
     
     ofstream outFile2("outputs/peer_stats.csv",ios::out);
     
-    outFile2 << "Node_id,Chain_Blocks,Total_Blocks,is_fast,hash_power" << endl;
+    outFile2 << "Node_id,Chain_Blocks,Total_Blocks,is_high_CPU,is_slow,hash_power" << endl;
     for(int i = 0;i<num_peers;i++){
         nodes[i+1]->print_tree_to_file();
         nodes[i+1]->print_stats(outFile2);

@@ -1,11 +1,11 @@
 # Simulation of a P2P Cryptocurrency Network
 
-## Guide: Prof. Vinay Ribeiro, CS 765, IIT Bombay 
+## Instructor: Prof. Vinay Ribeiro, CS 765, IIT Bombay 
 
 ### Requirements
 - Simulation
-    - Make `(Optional) (See below)`
-    - C++23 `Tested on GNU C++ (Ubuntu 20.04)`
+    - Make 
+    - C++23 `Tested on GNU C++ (Ubuntu 22.04)`
 - Visualization and Statistics
     - Python 3 `Recommended Python >= 3.6`
     - graphviz `sudo apt install graphviz`
@@ -49,17 +49,10 @@ The simulator outputs the following files:
 `src/visualize.py` draws the blockchain tree by reading in the edgelist and saves it into the file `outputs/blockchain_images/*.png`. It also draws the peer_network and saves it as `outputs/peer_network_img.png`
 
 
-You can simply execute the python script to automatically perform the aforementioned tasks.
+You can simply execute the python script to automatically perform the aforementioned task.
 ```
 python3 src/visualize.py
 ```
 
 ### Internals
-- The simulator will terminate as soon as any of the three is satisfied.
-    - `time_limit`: Run till the virtual timestamp is reached.
-
-
-
-make
-./simulator --num_peers 20 --slow_percent 80 --low_cpu_percent 20 --transaction_mean_time 5000000 --block_mean_time 28000000 --end_time 1200000000 > out.txt
-python3 src/visualize.py
+- The simulator will terminate as soon as the `time_limit` is reached.

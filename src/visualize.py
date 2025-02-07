@@ -14,6 +14,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def draw_blockchain(G, filename):
+    if len(G) == 0:
+        G.add_node(1)
     pos = graphviz_layout(G, prog="dot")
     pos = {k: (-y, x) for k, (x, y) in pos.items()}
     fig = plt.figure(dpi=300)

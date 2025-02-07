@@ -1,6 +1,6 @@
 make clean
 make
-./simulator --peers 50 --slow_percent 100 --low_cpu_percent 100 --txn_interarrival 10000000 --block_interarrival_time 600000000 --end_time 12000000000 > out.txt
+./simulator --peers 50 --slow_percent 80 --low_cpu_percent 20 --txn_interarrival 500000 --block_interarrival_time 10000000 --end_time 120000000
 python3 src/visualize.py
 
 
