@@ -92,6 +92,10 @@ void generate_network(){
         uniform_int_distribution<> dis2(0, in_tree.size() - 1);
         int randomIndex2 = dis2(gen);
         int tobe = in_tree[randomIndex2];       // Kon sa tree wala node connect hone wala h
+        while(nodes[tobe]->neighbours.size()>=6){
+            randomIndex2 = dis2(gen);
+            tobe = in_tree[randomIndex2];
+        }
 
         nodes[curr_node]->neighbours.insert(tobe);
         nodes[tobe]->neighbours.insert(curr_node);
