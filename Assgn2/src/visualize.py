@@ -71,6 +71,8 @@ def draw_peer_network(file, adversary=True):
 base = os.path.join(dirname(dirname(abspath(__file__))), 'outputs')
 network_file = os.path.join(base, 'peer_network_edgelist.txt')
 draw_peer_network(network_file)
+overlay_file = os.path.join(base, 'overlay_network_edgelist.txt')
+draw_peer_network(overlay_file)
 
 peer = int(sys.argv[1]) if len(sys.argv) > 1 else -1
 num_peers = len(os.listdir(os.path.join(base, 'blockchains')))

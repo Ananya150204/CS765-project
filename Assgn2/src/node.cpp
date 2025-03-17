@@ -20,9 +20,9 @@ Node::Node(long int node_id, bool is_slow,bool is_malicious){
     this->outFile << "Block_ID" << "," << "Prev_Blk_ID" << "," << "Arrival_time" << "," << "Time_addn_to_tree" << "," << "Num_txns" << endl;
 }
 
-unordered_set<int> Node::get_neighbours(bool overlay){
-    if(overlay) return overlay_neighbours;
-    return neighbours;
+unordered_set<int>* Node::get_neighbours(bool overlay){
+    if(overlay) return &(this->overlay_neighbours);
+    return &(this->neighbours);
 }
 
 // Generates transactions as per the problem specifications.

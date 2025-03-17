@@ -21,7 +21,7 @@ Node* ringmaster;
 mt19937 gen(rd());
 
 int draw_from_uniform(int low,int high){
-    if(low < high) return -1;
+    if(low > high) return -1;
     uniform_int_distribution<> dis(low, high);
     return dis(gen);
 }
@@ -118,37 +118,38 @@ void generate_graph(bool overlay=false){
 
         randomIndex = draw_from_uniform(0,in_tree.size()-1);
         int tobe = in_tree[randomIndex];       // Kon sa tree wala node connect hone wala h
-        cout << tobe << endl;
-        while(nodes[tobe]->get_neighbours(overlay).size()>=6){
-            randomIndex = draw_from_uniform(0,in_tree.size()-1);;
+        
+        while(nodes[tobe]->get_neighbours(overlay)->size()>=6){
+            randomIndex = draw_from_uniform(0,in_tree.size()-1);
             tobe = in_tree[randomIndex];
         }
 
-        nodes[curr_node]->get_neighbours(overlay).insert(tobe);
-        nodes[tobe]->get_neighbours(overlay).insert(curr_node);
+        nodes[curr_node]->get_neighbours(overlay)->insert(tobe);
+        nodes[tobe]->get_neighbours(overlay)->insert(curr_node);
 
         in_tree.push_back(curr_node);
     }
 
-    // for(int i:node_list){
-    //     while(nodes[i]->get_neighbours(overlay).size() < 3){
-    //         int val = node_list[draw_from_uniform(0,node_list.size()-1)];
-    //         while(val==i || 
-    //         nodes[i]->get_neighbours(overlay).find(val) != 
-    //         nodes[i]->get_neighbours(overlay).end() 
-    //         || nodes[val]->get_neighbours(overlay).size()>=6){
-    //             val = node_list[draw_from_uniform(0,node_list.size()-1)]; // wapas se chuno
-    //         } 
-    //         nodes[i]->get_neighbours(overlay).insert(val);
-    //         nodes[val]->get_neighbours(overlay).insert(i);
-    //     }
-    // }
+    for(int i:node_list){
+        while(nodes[i]->get_neighbours(overlay)->size() < 3){
+            int val = node_list[draw_from_uniform(0,node_list.size()-1)];
+            while(val==i || 
+            nodes[i]->get_neighbours(overlay)->find(val) != 
+            nodes[i]->get_neighbours(overlay)->end() 
+            || nodes[val]->get_neighbours(overlay)->size()>=6){
+                val = node_list[draw_from_uniform(0,node_list.size()-1)]; 
+                // wapas se chuno
+            } 
+            nodes[i]->get_neighbours(overlay)->insert(val);
+            nodes[val]->get_neighbours(overlay)->insert(i);
+        }
+    }
 
-    // for(int i:node_list){
-    //     for(auto j:nodes[i]->get_neighbours(overlay)){
-    //         rhos[i][j] = rhos[j][i] = draw_from_uniform(10,500);
-    //     }
-    // }
+    for(int i:node_list){
+        for(auto j:*(nodes[i]->get_neighbours(overlay))){
+            rhos[i][j] = rhos[j][i] = draw_from_uniform(10,500);
+        }
+    }
 }
 
 // The nodes are initialised with the mentioned parameters randomly. 
@@ -171,10 +172,10 @@ void generate_nodes(){
 
     shuffle(temp.begin(),temp.end(),gen);
 
-    if(malicious_node_percent + slow_percent > 100) {cout << "Impossible";exit(1);}
+    if(malicious_nodes + slow_nodes > num_peers) {cout << "Impossible";exit(1);}
 
     long int c=0;
-    while(slow_nodes>0){
+    while(slow_nodes > 0){
         if(!nodes[temp[c]]->is_malicious){
             nodes[temp[c]]->is_slow = true;
             slow_nodes--;
@@ -182,9 +183,9 @@ void generate_nodes(){
         c++;
     }
 
-    // long int mal_index = draw_from_uniform(0,malicious_node_list.size()-1);
-    // ringmaster = nodes[malicious_node_list[mal_index]];
-    // ringmaster->hash_power = double(malicious_node_list.size())/num_peers;
+    long int mal_index = draw_from_uniform(0,malicious_node_list.size()-1);
+    ringmaster = nodes[malicious_node_list[mal_index]];
+    ringmaster->hash_power = double(malicious_node_list.size())/num_peers;
 }
 
 // Generates starting events for the simulation.
@@ -218,7 +219,7 @@ int main(int argc, char* argv[]) {
     parse_arguments(argc,argv);
     generate_nodes();
     generate_graph(false);
-    // generate_graph(true);
+    generate_graph(true);
 
     ofstream outFile("outputs/peer_network_edgelist.txt",ios::app);
     for(int i=0;i<num_peers;i++){
@@ -227,7 +228,20 @@ int main(int argc, char* argv[]) {
         }
     }
     for(int i=0;i<num_peers;i++){
-        for(int j:nodes[i+1]->get_neighbours(false)){
+        for(int j:*(nodes[i+1]->get_neighbours(false))){
+            outFile << i+1 << " " << j << endl;
+        }
+    }
+
+    outFile.close();
+    outFile = ofstream("outputs/overlay_network_edgelist.txt",ios::app);
+    for(int i=0;i<num_peers;i++){
+        if(nodes[i+1]->is_malicious){
+            outFile << i+1 << endl;
+        }
+    }
+    for(int i=0;i<num_peers;i++){
+        for(int j:*(nodes[i+1]->get_neighbours(true))){
             outFile << i+1 << " " << j << endl;
         }
     }

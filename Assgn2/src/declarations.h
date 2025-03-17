@@ -74,7 +74,7 @@ class Node{
         bool traverse_to_genesis_and_check(Block*,bool);
         void remove_txns_from_mempool(Block*);
         void print_stats(ofstream&);
-        unordered_set<int> get_neighbours(bool);
+        unordered_set<int>* get_neighbours(bool);
 };
 
 class Block{
