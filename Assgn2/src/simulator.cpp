@@ -21,7 +21,7 @@ Node* ringmaster;
 mt19937 gen(rd());
 
 int draw_from_uniform(int low,int high){
-    if(low > high) return -1;
+    if(low > high) {cout << "Invalid range passed in draw_from_uniform" << endl;exit(1);}
     uniform_int_distribution<> dis(low, high);
     return dis(gen);
 }
