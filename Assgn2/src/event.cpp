@@ -124,6 +124,7 @@ void Event::process_event(){
     }
     else if(this->event_type == "rec_get_req"){
         Node* cur_node = nodes[this->receiver];
+        if(cur_node->is_malicous) return;
         if(cur_node->hash_to_block.contains(this->hash)){
             Block* b = cur_node->hash_to_block[this->hash];
             long double travelling_time = find_travelling_time(this->receiver,this->sender,b->block_size);
