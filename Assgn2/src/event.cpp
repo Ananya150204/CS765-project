@@ -21,6 +21,20 @@ long double find_travelling_time(int i,int j,int msg_size){
     return travelling_time;
 }
 
+// Forwards the "hash" of the block to all its immediate neighbors in the graph
+void forward_hash(Node*cur_node,Block*b,long int event_sender){
+    for(int j:cur_node->neighbours){
+        if(j==event_sender) continue;
+        long double travelling_time = find_travelling_time(cur_node->node_id,j,TXN_SIZE);
+        Event* e = new Event("rec_hash",current_time+travelling_time);
+        e->sender = cur_node->node_id;
+        e->hash = b->getHash();
+
+        e->receiver = j;
+        events.insert(e);
+    }
+}
+
 // Forwards the block to all its immediate neighbors in the graph
 void forward_blocks(Node*cur_node,Block*b,long int event_sender){
     for(int j:cur_node->neighbours){
@@ -33,6 +47,18 @@ void forward_blocks(Node*cur_node,Block*b,long int event_sender){
         e->receiver = j;
         events.insert(e);
     }
+}
+
+void forward_get_req(Node*cur_node,size_t hash,GET_REQ* get_req){
+    int tobe = cur_node->pot_blk_senders[hash].front();
+    cur_node->pot_blk_senders[hash].pop();
+    long double travelling_time = find_travelling_time(cur_node->node_id,tobe,TXN_SIZE);
+    Event* e = new Event("rec_get_req",current_time+travelling_time);
+    e->get_req = get_req;
+    e->sender = cur_node->node_id;
+    e->receiver = tobe;
+    e->hash = hash;
+    events.insert(e);
 }
 
 
@@ -78,27 +104,69 @@ void Event::process_event(){
         cur_node->total_blocks++;
         cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << endl;
 
-        for(int j:cur_node->neighbours){
-            long double travelling_time = find_travelling_time(this->sender,j,this->blk->block_size);
-            Event* e = new Event("rec_block",this->timestamp+travelling_time);
-            e->sender = this->sender;
-            e->blk = this->blk;
+        cur_node->hash_to_block[this->blk->getHash()] = this->blk;
+        // forward_blocks(nodes[this->sender],this->blk,this->sender);
+        forward_hash(nodes[this->sender],this->blk,this->sender);
+    }
+    else if(this->event_type == "rec_hash"){
+        Node* cur_node = nodes[this->receiver];
+        cur_node->pot_blk_senders[this->hash].push(this->sender);
 
-            e->receiver = j;
+        if(!cur_node->valid_get_requests.contains(this->hash)){
+            GET_REQ* get_req = new GET_REQ(this->receiver,this->sender,this->hash);
+            get_req->timeout_event = new Event("timeout",current_time+timeout);
+            get_req->timeout_event->receiver = this->receiver;
+            get_req->hash = this->hash;
+            events.insert(get_req->timeout_event);
+            cur_node->valid_get_requests[this->hash] = get_req;
+            forward_get_req(cur_node,this->hash,get_req);
+        }
+    }
+    else if(this->event_type == "rec_get_req"){
+        Node* cur_node = nodes[this->receiver];
+        if(cur_node->hash_to_block.contains(this->hash)){
+            Block* b = cur_node->hash_to_block[this->hash];
+            long double travelling_time = find_travelling_time(this->receiver,this->sender,b->block_size);
+            Event* e = new Event("rec_block",current_time+travelling_time);
+            e->sender = this->receiver;
+            e->blk = b;
+            e->receiver = this->sender;
+            e->get_req = this->get_req;
+            e->hash = hash;
             events.insert(e);
+        }
+    }
+    else if(this->event_type == "timeout"){ // timeout period is over
+        Node* cur_node = nodes[this->receiver];
+        cur_node->valid_get_requests.erase(this->hash);
+        if(cur_node->pot_blk_senders.contains(this->hash) && cur_node->pot_blk_senders[this->hash].size()>0){
+            int tobe = cur_node->pot_blk_senders[this->hash].front();
+
+            GET_REQ* get_req = new GET_REQ(tobe,this->sender,this->hash);
+            get_req->timeout_event = new Event("timeout",current_time+timeout);
+            events.insert(get_req->timeout_event);
+            cur_node->valid_get_requests[this->hash] = get_req;
+            forward_get_req(cur_node,this->hash,get_req);
         }
     }
     else if(this->event_type == "rec_block"){
         // If not valid, return.
         Node* cur_node = nodes[this->receiver];
+        if(!cur_node->valid_get_requests.contains(this->hash) || cur_node->valid_get_requests[this->hash]!=this->get_req) return;
+        events.erase(this->get_req->timeout_event);
+        delete this->get_req;
+        cur_node->valid_get_requests.erase(this->hash);
+        cur_node->pot_blk_senders.erase(this->hash);
+
         if(!cur_node->check_balance_validity(this->blk)) return;
 
         // If block already there in the tree of receiver (of this event) then do nothing.
         if(cur_node->blk_id_to_pointer.find(this->blk->blk_id) !=  cur_node->blk_id_to_pointer.end()) return; 
 
-        if(cur_node->blk_id_to_pointer[this->blk->prev_blk_id]==NULL){
+        if(!cur_node->blk_id_to_pointer.contains(this->blk->prev_blk_id)){
             cur_node->orphaned_blocks.insert({this->blk,current_time});
-            forward_blocks(cur_node,this->blk,this->sender);
+            // forward_blocks(cur_node,this->blk,this->sender);
+            forward_hash(cur_node,this->blk,this->sender);
             return;
         }
 
@@ -117,6 +185,8 @@ void Event::process_event(){
             // Forwarding orphaned block here is not required since we are forwarding every valid block when it is received.
         }
 
-        forward_blocks(cur_node,this->blk,this->sender);
+        // forward_blocks(cur_node,this->blk,this->sender);
+        forward_hash(cur_node,this->blk,this->sender);
+
     }
 }

@@ -19,22 +19,26 @@ extern long int blk_counter;
 extern random_device rd;
 extern mt19937 gen;
 extern unordered_map<int,unordered_map<int,int>> rhos;
+extern double timeout;
 
 class Transaction{
     public:
     long int payer_id,receiver_id,num_coins,txn_id;
+    bool is_get = false;
     Transaction(long int txn_id,long int payer_id,long int receiver_id,long int num_coins);
-   
 };
 
 class Block;
+class GET_REQ;
 
 class Event{
     public:
         string event_type;
         ld timestamp;
         Transaction* txn;
+        GET_REQ* get_req;
         Block* blk;
+        size_t hash;
         int sender;
         int receiver;
         
@@ -75,6 +79,10 @@ class Node{
         void remove_txns_from_mempool(Block*);
         void print_stats(ofstream&);
         unordered_set<int>* get_neighbours(bool);
+
+        unordered_map<size_t,queue<int>> pot_blk_senders;
+        unordered_map<size_t,GET_REQ*> valid_get_requests;
+        unordered_map<size_t,Block*> hash_to_block;
 };
 
 class Block{
@@ -86,6 +94,30 @@ class Block{
         long int depth=0;         // placeholder value
         long double timestamp=0;
         long int miner=-1;       // Node_id of the miner
+
+        size_t getHash() const {
+            size_t hash_val = 0;
+            hash_val ^= std::hash<long int>{}(blk_id) + 0x9e3779b9 + (hash_val << 6) + (hash_val >> 2);
+            hash_val ^= std::hash<long int>{}(prev_blk_id) + 0x9e3779b9 + (hash_val << 6) + (hash_val >> 2);
+            hash_val ^= std::hash<long int>{}(block_size) + 0x9e3779b9 + (hash_val << 6) + (hash_val >> 2);
+            hash_val ^= std::hash<long int>{}(depth) + 0x9e3779b9 + (hash_val << 6) + (hash_val >> 2);
+            hash_val ^= std::hash<long double>{}(timestamp) + 0x9e3779b9 + (hash_val << 6) + (hash_val >> 2);
+            hash_val ^= std::hash<long int>{}(miner) + 0x9e3779b9 + (hash_val << 6) + (hash_val >> 2);
+            // Optional: hash transaction pointers/IDs if needed
+            return hash_val;
+        }
+};
+
+class GET_REQ{
+    public:
+    Event* timeout_event;
+    int sender,receiver;
+    size_t hash;
+    GET_REQ(int sender,int receiver,size_t hash){
+        this->sender = sender;
+        this->receiver = receiver;
+        this->hash = hash;
+    }
 };
 
 extern unordered_map<int,Node*> nodes;

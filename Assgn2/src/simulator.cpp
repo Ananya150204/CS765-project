@@ -247,18 +247,18 @@ int main(int argc, char* argv[]) {
     }
     outFile.close();
 
-    // generate_events(false);
-    // generate_events(true);
-    // run_events();
+    generate_events(false);
+    generate_events(true);
+    run_events();
     
-    // ofstream outFile2("outputs/peer_stats.csv",ios::out);
+    ofstream outFile2("outputs/peer_stats.csv",ios::out);
     
-    // outFile2 << "Node_id,Chain_Blocks,Total_Blocks,is_high_CPU,is_slow,hash_power" << endl;
-    // for(int i = 0;i<num_peers;i++){
-    //     nodes[i+1]->print_tree_to_file();
-    //     nodes[i+1]->print_stats(outFile2);
-    //     nodes[i+1]->outFile.close();
-    // }
+    outFile2 << "Node_id,Chain_Blocks,Total_Blocks,is_high_CPU,is_slow,hash_power" << endl;
+    for(int i = 0;i<num_peers;i++){
+        nodes[i+1]->print_tree_to_file();
+        nodes[i+1]->print_stats(outFile2);
+        nodes[i+1]->outFile.close();
+    }
 
     return 0;
 } 
