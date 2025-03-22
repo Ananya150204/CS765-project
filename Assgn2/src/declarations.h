@@ -35,10 +35,11 @@ class GET_REQ;
 
 class Event{
     public:
+        bool sent_on_overlay=false;
+        GET_REQ* get_req;
         string event_type;
         ld timestamp;
         Transaction* txn;
-        GET_REQ* get_req;
         Block* blk;
         size_t hash;
         int sender;
@@ -80,18 +81,20 @@ class Node{
         bool traverse_to_genesis_and_check(Block*,bool);
         void remove_txns_from_mempool(Block*);
         void print_stats(ofstream&);
-        unordered_set<int>* get_neighbours(bool);
 
-        unordered_map<size_t,queue<int>> pot_blk_senders;
+        unordered_map<size_t,queue<pair<int,bool>>> pot_blk_senders;
         unordered_map<size_t,GET_REQ*> sent_get_requests;
         unordered_map<size_t,Block*> hash_to_block;
 };
 
 class Malicious_Node:public Node{
+    public:
     unordered_set<int> overlay_neighbours;
     unordered_map<long int,Block*> private_chain;
     Block* private_chain_leaf;
-    Node(long int node_id, bool is_slow,bool is_malicious);
+    Malicious_Node(long int node_id, bool is_slow,bool is_malicious);
+    vector<long int> private_balances;
+    bool check_private_block(Block*);
 };
 
 class Block{
@@ -103,7 +106,7 @@ class Block{
         long int depth=0;         // placeholder value
         long double timestamp=0;
         long int miner=-1;       // Node_id of the miner
-
+        
         size_t getHash() const {
             size_t hash_val = 0;
             hash_val ^= std::hash<long int>{}(blk_id) + 0x9e3779b9 + (hash_val << 6) + (hash_val >> 2);
@@ -132,5 +135,10 @@ class GET_REQ{
 extern unordered_map<int,Node*> nodes;
 extern set<Event*,decltype(comp)> events;
 extern vector<long int> malicious_node_list;
-extern Node* ringmaster;
+extern Malicious_Node* ringmaster;
+extern Block* genesis_block;
+
+unordered_set<int>* get_neighbours(Node*n,bool overlay);
 #endif
+
+

@@ -17,9 +17,12 @@ unordered_map<int,Node*> nodes;
 set<Event*,decltype(comp)> events;
 vector<long int> malicious_node_list;
 random_device rd;
-Node* ringmaster;
+Malicious_Node* ringmaster;
+Block* genesis_block = new Block();
 
-mt19937 gen(rd());
+// auto seed = rd();
+auto seed = 1461198227;
+mt19937 gen(seed);
 
 int draw_from_uniform(int low,int high){
     if(low > high) {cout << "Invalid range passed in draw_from_uniform" << endl;exit(1);}
@@ -105,9 +108,7 @@ void generate_graph(bool overlay=false){
         if(overlay){
             if(nodes[i+1]->is_malicious) node_list.push_back(i+1);
         }
-        else{
-            node_list.push_back(i+1);
-        }
+        else node_list.push_back(i+1);
     }
     vector<int> in_tree;
     vector<int> out_tree = node_list;
@@ -120,42 +121,47 @@ void generate_graph(bool overlay=false){
     while (out_tree.size()>0){
         randomIndex = draw_from_uniform(0,out_tree.size()-1);
         int curr_node = out_tree[randomIndex];      // Kon sa node tree me jane wala h
-        swap(out_tree[randomIndex],out_tree[out_tree.size()-1]);
+        swap(out_tree[randomIndex],out_tree.back());
         out_tree.pop_back();
-
+        
         randomIndex = draw_from_uniform(0,in_tree.size()-1);
         int tobe = in_tree[randomIndex];       // Kon sa tree wala node connect hone wala h
         
-        while(nodes[tobe]->get_neighbours(overlay)->size()>=6){
+        unordered_set<int>* neigh = get_neighbours(nodes[tobe],overlay);
+        
+        while(neigh->size()>=6){
             randomIndex = draw_from_uniform(0,in_tree.size()-1);
             tobe = in_tree[randomIndex];
+            neigh = get_neighbours(nodes[tobe],overlay);
         }
-
-        nodes[curr_node]->get_neighbours(overlay)->insert(tobe);
-        nodes[tobe]->get_neighbours(overlay)->insert(curr_node);
-
+        
+        unordered_set<int>* other = get_neighbours(nodes[curr_node],overlay); 
+        other->insert(tobe);
+        neigh->insert(curr_node);
         in_tree.push_back(curr_node);
     }
-
     for(int i:node_list){
-        while(nodes[i]->get_neighbours(overlay)->size() < 3){
+        unordered_set<int>* neigh = get_neighbours(nodes[i],overlay);
+
+        while(neigh->size() < 3){
             int val = node_list[draw_from_uniform(0,node_list.size()-1)];
-            while(val==i || 
-            nodes[i]->get_neighbours(overlay)->find(val) != 
-            nodes[i]->get_neighbours(overlay)->end() 
-            || nodes[val]->get_neighbours(overlay)->size()>=6){
-                val = node_list[draw_from_uniform(0,node_list.size()-1)]; 
+            unordered_set<int>* other = get_neighbours(nodes[val],overlay);
+            
+            while(val==i || neigh->find(val) != neigh->end() || other->size()>=6){
+                val = node_list[draw_from_uniform(0,node_list.size()-1)];
+                other = get_neighbours(nodes[val],overlay);
                 // wapas se chuno
             } 
-            nodes[i]->get_neighbours(overlay)->insert(val);
-            nodes[val]->get_neighbours(overlay)->insert(i);
+            neigh->insert(val);
+            other->insert(i);
         }
     }
 
     for(int i:node_list){
-        for(auto j:*(nodes[i]->get_neighbours(overlay))){
-            if(!overlay) rhos[i][j] = rhos[j][i] = draw_from_uniform(10,500);
-            else rhos_overlay[i][j] = rhos_overlay[j][i] = draw_from_uniform(1,10);
+        unordered_set<int>* neigh = get_neighbours(nodes[i],overlay);
+        for(auto j:*neigh){
+            if(overlay)rhos_overlay[i][j] = rhos_overlay[j][i] = draw_from_uniform(1,10);
+            else rhos[i][j] = rhos[j][i] = draw_from_uniform(10,500);
         }
     }
 }
@@ -175,8 +181,7 @@ void generate_nodes(){
 
     for(int i=0;i<malicious_nodes;i++){
         delete nodes[temp[i]];
-        nodes[temp[i]] = new Malicious_Node(temp[i],false,false);
-        nodes[temp[i]]->is_malicious = true;
+        nodes[temp[i]] = new Malicious_Node(temp[i],false,true);
         malicious_node_list.push_back(temp[i]);
     }
 
@@ -194,7 +199,7 @@ void generate_nodes(){
     }
 
     long int mal_index = draw_from_uniform(0,malicious_node_list.size()-1);
-    ringmaster = nodes[malicious_node_list[mal_index]];
+    ringmaster = (Malicious_Node*)nodes[malicious_node_list[mal_index]];
     ringmaster->hash_power = double(malicious_node_list.size())/num_peers;
 }
 
@@ -226,33 +231,39 @@ void run_events(){
 }
 
 int main(int argc, char* argv[]) {
+    cout << seed << endl;
+    genesis_block->blk_id = 1;
+    genesis_block->prev_blk_id = 0;
+    genesis_block->timestamp = 0;
+    genesis_block->depth = 1;
     parse_arguments(argc,argv);
     generate_nodes();
     generate_graph(false);
     generate_graph(true);
 
     ofstream outFile("outputs/peer_network_edgelist.txt",ios::app);
-    for(int i=0;i<num_peers;i++){
-        if(nodes[i+1]->is_malicious){
-            outFile << i+1 << endl;
-        }
+    outFile << ringmaster->node_id << endl;
+    for(int i:malicious_node_list){
+        if(nodes[i]==ringmaster) continue;
+        outFile << i << endl;
     }
+
     for(int i=0;i<num_peers;i++){
-        for(int j:*(nodes[i+1]->get_neighbours(false))){
+        for(int j:*(get_neighbours(nodes[i+1],false))){
             outFile << i+1 << " " << j << endl;
         }
     }
 
     outFile.close();
     outFile = ofstream("outputs/overlay_network_edgelist.txt",ios::app);
-    for(int i=0;i<num_peers;i++){
-        if(nodes[i+1]->is_malicious){
-            outFile << i+1 << endl;
-        }
+    outFile << ringmaster->node_id << endl;
+    for(int i:malicious_node_list){
+        if(nodes[i]==ringmaster) continue;
+        outFile << i << endl;
     }
-    for(int i=0;i<num_peers;i++){
-        for(int j:*(nodes[i+1]->get_neighbours(true))){
-            outFile << i+1 << " " << j << endl;
+    for(int i:malicious_node_list){
+        for(int j:*(get_neighbours(nodes[i],true))){
+            outFile << i << " " << j << endl;
         }
     }
     outFile.close();

@@ -7,22 +7,12 @@ Node::Node(long int node_id, bool is_slow,bool is_malicious){
     this->total_blocks = 0;
     this->is_malicious = is_malicious;
     
-    Block* genesis_block = new Block();
-    genesis_block->blk_id = 1;
-    genesis_block->prev_blk_id = 0;
-    genesis_block->timestamp = 0;
-    genesis_block->depth = 1;
     this->blk_id_to_pointer[1] = genesis_block;
     this->longest_chain_leaf = genesis_block;
     this->latest_mining_event = 0;
     this->balances = vector<long int>(num_peers+1,0);
     this->outFile.open("outputs/block_arrivals/" + to_string(this->node_id) + ".csv",ios::out);
     this->outFile << "Block_ID" << "," << "Prev_Blk_ID" << "," << "Arrival_time" << "," << "Time_addn_to_tree" << "," << "Num_txns" << "is_malicious_mined" << endl;
-}
-
-unordered_set<int>* Node::get_neighbours(bool overlay){
-    if(overlay) return &(this->overlay_neighbours);
-    return &(this->neighbours);
 }
 
 // Generates transactions as per the problem specifications.
@@ -54,8 +44,11 @@ Event* Node:: generate_trans_event(){
 Event* Node:: generate_block_event(long int id){       
     Block* to_be_mined = new Block();
     to_be_mined->miner = this->node_id;
-    to_be_mined->prev_blk_id = this->longest_chain_leaf->blk_id;
 
+    if(this->is_malicious) to_be_mined->prev_blk_id = ((Malicious_Node*)this)->private_chain_leaf->blk_id;
+    else to_be_mined->prev_blk_id = this->longest_chain_leaf->blk_id;
+
+    to_be_mined->depth = 1 + this->blk_id_to_pointer[to_be_mined->prev_blk_id]->depth;
     if(id==-1) to_be_mined->blk_id  = ++blk_counter;
     else to_be_mined->blk_id = id;
 
@@ -91,8 +84,9 @@ void Node:: print_tree_to_file(){
         long int curr_block = q.front();
         q.pop();
         for(auto j:this->blockchain_tree[curr_block]){
-            bool col1 = nodes[this->blk_id_to_pointer[cur_block]->miner]->is_malicious;
-            bool col2 = nodes[this->blk_id_to_pointer[j]->miner]->is_malicious;
+            bool col1 = 0, col2 = 0;
+            if(this->blk_id_to_pointer[curr_block]->blk_id != 1) col1 = nodes[this->blk_id_to_pointer[curr_block]->miner]->is_malicious;
+            if(this->blk_id_to_pointer[j]->blk_id != 1) col2 = nodes[this->blk_id_to_pointer[j]->miner]->is_malicious;
             outFile << curr_block << " " << col1 <<  " " << j << " " << col2 << endl;
             q.push(j);
         }
@@ -137,6 +131,7 @@ bool Node:: traverse_to_genesis_and_check(Block*b,bool reset_balance){
     if(reset_balance){
         for(auto i=0;i<num_peers;i++){
             this->balances[i+1] = delta[i+1];
+            if(this->is_malicious)(((Malicious_Node*)this)->private_balances)[i+1] = delta[i+1];
         }
     }
     return true;
@@ -164,7 +159,7 @@ bool Node:: update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_eve
                 return false;
             }
         }
-        else{
+        else{// when new block that arrives doesn't form the longest chain so just validate it dont reset the balance
             if(!this->traverse_to_genesis_and_check(b,false)) {
                 this->blk_id_to_pointer.erase(b->blk_id);
                 this->hash_to_block.erase(b->getHash());
@@ -178,6 +173,7 @@ bool Node:: update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_eve
 
     if(this->longest_chain_leaf->depth < b->depth){
         this->longest_chain_leaf = b;
+        if(this->is_malicious) ((Malicious_Node*)this)->private_chain_leaf = b;
         this->remove_txns_from_mempool(b);
         if(this->latest_mining_event && del_lat_mining_event){
             events.erase(this->latest_mining_event);

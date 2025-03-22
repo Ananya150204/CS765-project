@@ -45,18 +45,46 @@ def draw_peer_network(file, adversary=True):
 
     malicious_nodes = set()
     edges = []
-    for line in lines:
+    ringmaster = None
+    for counter,line in enumerate(lines):
         parts = line.split()
         if len(parts) == 1:
+            if(counter==0):
+                ringmaster = int(parts[0])
             malicious_nodes.add(int(parts[0]))
         else:
             edges.append((int(parts[0]), int(parts[1])))
 
     G = nx.Graph(edges)
-    colours = ['darkred' if v in malicious_nodes else '#1f78b4' for v in G.nodes()]
+
+    malicious_list = list(malicious_nodes)
+    primary_malicious = ringmaster if malicious_list else None
+
+    # Assign node colors
+    node_colors = [
+        'yellow' if v == primary_malicious else
+        'darkred' if v in malicious_nodes else
+        '#1f78b4'
+        for v in G.nodes()
+    ]
+
     pos = graphviz_layout(G, prog="circo")
     filename = file.replace('_edgelist.txt', '_img.png')
-    nx.draw(G, pos, node_color=colours, with_labels=True, font_color="white")
+
+    # Draw nodes and edges
+    nx.draw(G, pos, node_color=node_colors, with_labels=False)
+
+    # Prepare labels and font colors per node
+    labels = {node: str(node) for node in G.nodes()}
+    font_colors = {
+        node: 'black' if node == primary_malicious else 'white'
+        for node in G.nodes()
+    }
+
+    # Draw labels with per-node font color
+    for node, (x, y) in pos.items():
+        nx.draw_networkx_labels(G, pos={node: (x, y)}, labels={node: labels[node]}, font_color=font_colors[node])
+
     plt.savefig(filename, bbox_inches='tight')
     plt.close()
 

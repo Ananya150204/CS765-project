@@ -1,0 +1,6 @@
+Block_ID,Prev_Blk_ID,Arrival_time,Time_addn_to_tree,Num_txnsis_malicious_mined
+6,1,6.9405e+07,6.9405e+07,10
+8,6,2.3525e+08,2.3525e+0880
+9,8,3.05072e+08,3.05072e+08,30
+43,9,4.10188e+08,4.10188e+08100
+13,43,5.6342e+08,5.6342e+08,1990
