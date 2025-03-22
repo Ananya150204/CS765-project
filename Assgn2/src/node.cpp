@@ -17,7 +17,7 @@ Node::Node(long int node_id, bool is_slow,bool is_malicious){
     this->latest_mining_event = 0;
     this->balances = vector<long int>(num_peers+1,0);
     this->outFile.open("outputs/block_arrivals/" + to_string(this->node_id) + ".csv",ios::out);
-    this->outFile << "Block_ID" << "," << "Prev_Blk_ID" << "," << "Arrival_time" << "," << "Time_addn_to_tree" << "," << "Num_txns" << endl;
+    this->outFile << "Block_ID" << "," << "Prev_Blk_ID" << "," << "Arrival_time" << "," << "Time_addn_to_tree" << "," << "Num_txns" << "is_malicious_mined" << endl;
 }
 
 unordered_set<int>* Node::get_neighbours(bool overlay){
@@ -91,7 +91,9 @@ void Node:: print_tree_to_file(){
         long int curr_block = q.front();
         q.pop();
         for(auto j:this->blockchain_tree[curr_block]){
-            outFile << curr_block << " " << j << endl;
+            bool col1 = nodes[this->blk_id_to_pointer[cur_block]->miner]->is_malicious;
+            bool col2 = nodes[this->blk_id_to_pointer[j]->miner]->is_malicious;
+            outFile << curr_block << " " << col1 <<  " " << j << " " << col2 << endl;
             q.push(j);
         }
     }
@@ -158,12 +160,14 @@ bool Node:: update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_eve
         if(this->longest_chain_leaf->depth < 1+prev_block->depth){
             if(!this->traverse_to_genesis_and_check(b,true)) {
                 this->blk_id_to_pointer.erase(b->blk_id);
+                this->hash_to_block.erase(b->getHash());
                 return false;
             }
         }
         else{
             if(!this->traverse_to_genesis_and_check(b,false)) {
                 this->blk_id_to_pointer.erase(b->blk_id);
+                this->hash_to_block.erase(b->getHash());
                 return false;
             }
         }
@@ -195,6 +199,7 @@ bool Node:: check_balance_validity(Block*b){
             long int receiver = txn->receiver_id;
             long int num_coins = txn->num_coins;
             if(delta[payer]<num_coins){
+                this->hash_to_block.erase(b->getHash());
                 return false;
             }
             delta[payer] -= num_coins;

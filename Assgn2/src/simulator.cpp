@@ -10,8 +10,9 @@ long double current_time;               // microseconds
 long double end_time;                   // microseconds
 long int txn_counter = 0;
 long int blk_counter = 1;
+bool no_eclipse_attack = false;
 
-unordered_map<int,unordered_map<int,int>> rhos;  // milliseconds
+unordered_map<int,unordered_map<int,int>> rhos,rhos_overlay;  // milliseconds
 unordered_map<int,Node*> nodes;
 set<Event*,decltype(comp)> events;
 vector<long int> malicious_node_list;
@@ -69,6 +70,11 @@ void parse_arguments(int argc, char* argv[]) {
         .scan<'g', long double>()
         .help("Simulation end time (microseconds)");
 
+    program.add_argument("-nec", "--no-eclipse-attack")
+        .default_value(false)
+        .implicit_value(true)
+        .help("Disable eclipse attack");
+
     try {
         program.parse_args(argc, argv);
 
@@ -79,6 +85,7 @@ void parse_arguments(int argc, char* argv[]) {
         transaction_mean_time = program.get<long double>("--txn_interarrival");
         block_mean_time = program.get<long double>("--block_interarrival_time");
         end_time = program.get<long double>("--end_time");
+        no_eclipse_attack = program.get<bool>("--no-eclipse-attack");
 
     } catch (const exception& e) {
         cerr << "Argument parsing error: " << e.what() << endl;
@@ -147,7 +154,8 @@ void generate_graph(bool overlay=false){
 
     for(int i:node_list){
         for(auto j:*(nodes[i]->get_neighbours(overlay))){
-            rhos[i][j] = rhos[j][i] = draw_from_uniform(10,500);
+            if(!overlay) rhos[i][j] = rhos[j][i] = draw_from_uniform(10,500);
+            else rhos_overlay[i][j] = rhos_overlay[j][i] = draw_from_uniform(1,10);
         }
     }
 }
@@ -166,6 +174,8 @@ void generate_nodes(){
     shuffle(temp.begin(),temp.end(),gen);
 
     for(int i=0;i<malicious_nodes;i++){
+        delete nodes[temp[i]];
+        nodes[temp[i]] = new Malicious_Node(temp[i],false,false);
         nodes[temp[i]]->is_malicious = true;
         malicious_node_list.push_back(temp[i]);
     }
@@ -191,7 +201,7 @@ void generate_nodes(){
 // Generates starting events for the simulation.
 void generate_events(bool block){
     for(int i=0;i<num_peers;i++){
-        if(block) events.insert(nodes[i+1]->generate_block_event());
+        if(block && (!nodes[i+1]->is_malicious || nodes[i+1]==ringmaster)) events.insert(nodes[i+1]->generate_block_event());
         else events.insert(nodes[i+1]->generate_trans_event());
     }
 }

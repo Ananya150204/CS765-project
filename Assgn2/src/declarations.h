@@ -7,6 +7,7 @@ typedef long double ld;
 #define TXN_SIZE 8192    // in bits
 #define MAX_BLK_SIZE 8388608    // in bits
 #define MAX_TXNS 1023
+#define HASH_SIZE 512        // in bits
 
 extern int num_peers;
 extern double slow_percent;
@@ -18,8 +19,9 @@ extern long int txn_counter;
 extern long int blk_counter;
 extern random_device rd;
 extern mt19937 gen;
-extern unordered_map<int,unordered_map<int,int>> rhos;
+extern unordered_map<int,unordered_map<int,int>> rhos,rhos_overlay;
 extern double timeout;
+extern bool no_eclipse_attack;
 
 class Transaction{
     public:
@@ -64,7 +66,7 @@ class Node{
         unordered_map<long int,Block*> blk_id_to_pointer;       // 1 is the block id of genesis block and 0 denotes null block
         set<pair<Block*,long double>> orphaned_blocks;
         Block* longest_chain_leaf;
-        unordered_set<int> neighbours,overlay_neighbours;
+        unordered_set<int> neighbours;
         unordered_map<long int,Transaction*> mempool;
         vector<long int>balances;
 
@@ -81,8 +83,15 @@ class Node{
         unordered_set<int>* get_neighbours(bool);
 
         unordered_map<size_t,queue<int>> pot_blk_senders;
-        unordered_map<size_t,GET_REQ*> valid_get_requests;
+        unordered_map<size_t,GET_REQ*> sent_get_requests;
         unordered_map<size_t,Block*> hash_to_block;
+};
+
+class Malicious_Node:public Node{
+    unordered_set<int> overlay_neighbours;
+    unordered_map<long int,Block*> private_chain;
+    Block* private_chain_leaf;
+    Node(long int node_id, bool is_slow,bool is_malicious);
 };
 
 class Block{
@@ -90,7 +99,7 @@ class Block{
         long int blk_id;
         long int prev_blk_id;
         vector<Transaction*> transactions;
-        long int block_size=TXN_SIZE;        // bits
+        long int block_size=TXN_SIZE+HASH_SIZE;        // bits
         long int depth=0;         // placeholder value
         long double timestamp=0;
         long int miner=-1;       // Node_id of the miner

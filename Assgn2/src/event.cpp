@@ -9,8 +9,9 @@ Event::Event(string event_type,ld timestamp,Transaction*txn,int sender){
 
 // Calculates the time taken to travel from node i to node j given a particular
 // message size
-long double find_travelling_time(int i,int j,int msg_size){
+long double find_travelling_time(int i,int j,int msg_size,bool overlay = false){
     long double travelling_time = rhos[i][j]*1000;
+    if(overlay) travelling_time = rhos_overlay[i][j]*1000;
     long double c_i_j = 100;
     if(nodes[i]->is_slow || nodes[j]->is_slow){
         c_i_j = 5;   
@@ -22,10 +23,12 @@ long double find_travelling_time(int i,int j,int msg_size){
 }
 
 // Forwards the "hash" of the block to all its immediate neighbors in the graph
-void forward_hash(Node*cur_node,Block*b,long int event_sender){
-    for(int j:cur_node->neighbours){
+void forward_hash(Node*cur_node,Block*b,long int event_sender,bool overlay = false){
+    for(int j:*(cur_node->get_neighbours(overlay))){
         if(j==event_sender) continue;
-        long double travelling_time = find_travelling_time(cur_node->node_id,j,TXN_SIZE);
+        // if sending on honest chain(!overlay) and the receiver is a neighbour in the overlay network also then skip
+        if(!overlay && cur_node->get_neighbours(true)->find(j) != cur_node->get_neighbours(true)->end()) continue;
+        long double travelling_time = find_travelling_time(cur_node->node_id,j,TXN_SIZE,overlay);
         Event* e = new Event("rec_hash",current_time+travelling_time);
         e->sender = cur_node->node_id;
         e->hash = b->getHash();
@@ -35,19 +38,6 @@ void forward_hash(Node*cur_node,Block*b,long int event_sender){
     }
 }
 
-// Forwards the block to all its immediate neighbors in the graph
-void forward_blocks(Node*cur_node,Block*b,long int event_sender){
-    for(int j:cur_node->neighbours){
-        if(j==event_sender) continue;
-        long double travelling_time = find_travelling_time(cur_node->node_id,j,b->block_size);
-        Event* e = new Event("rec_block",current_time+travelling_time);
-        e->sender = cur_node->node_id;
-        e->blk = b;
-
-        e->receiver = j;
-        events.insert(e);
-    }
-}
 
 void forward_get_req(Node*cur_node,size_t hash,GET_REQ* get_req){
     int tobe = cur_node->pot_blk_senders[hash].front();
@@ -60,6 +50,7 @@ void forward_get_req(Node*cur_node,size_t hash,GET_REQ* get_req){
     e->hash = hash;
     events.insert(e);
 }
+
 
 
 // Deals with the various types of event as :
@@ -99,32 +90,36 @@ void Event::process_event(){
         Node* cur_node = nodes[this->sender];
         if(!cur_node->check_balance_validity(this->blk)) return;
         Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
-
         if(!cur_node->update_tree_and_add(this->blk,prev_block,false)) return;
         cur_node->total_blocks++;
-        cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << endl;
-
+        cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << this->blk->block_size/TXN_SIZE << nodes[this->blk->miner]->is_malicious << endl;
         cur_node->hash_to_block[this->blk->getHash()] = this->blk;
-        // forward_blocks(nodes[this->sender],this->blk,this->sender);
-        forward_hash(nodes[this->sender],this->blk,this->sender);
+
+        if(cur_node->is_malicious && ringmaster==cur_node){ 
+            forward_hash(nodes[this->sender],this->blk,this->sender,true);
+        }
+        else{
+            forward_hash(nodes[this->sender],this->blk,this->sender);
+        }
     }
     else if(this->event_type == "rec_hash"){
+        if(cur_node->hash_to_block.contains(this->get_req->hash)) return;
         Node* cur_node = nodes[this->receiver];
         cur_node->pot_blk_senders[this->hash].push(this->sender);
 
-        if(!cur_node->valid_get_requests.contains(this->hash)){
+        if(!cur_node->sent_get_requests.contains(this->hash)){
             GET_REQ* get_req = new GET_REQ(this->receiver,this->sender,this->hash);
             get_req->timeout_event = new Event("timeout",current_time+timeout);
             get_req->timeout_event->receiver = this->receiver;
             get_req->hash = this->hash;
             events.insert(get_req->timeout_event);
-            cur_node->valid_get_requests[this->hash] = get_req;
+            cur_node->sent_get_requests[this->hash] = get_req;
             forward_get_req(cur_node,this->hash,get_req);
         }
     }
     else if(this->event_type == "rec_get_req"){
         Node* cur_node = nodes[this->receiver];
-        if(cur_node->is_malicous) return;
+        if(cur_node->is_malicious && !no_eclipse_attack && !nodes[this->sender]->is_malicious) return;
         if(cur_node->hash_to_block.contains(this->hash)){
             Block* b = cur_node->hash_to_block[this->hash];
             long double travelling_time = find_travelling_time(this->receiver,this->sender,b->block_size);
@@ -139,24 +134,29 @@ void Event::process_event(){
     }
     else if(this->event_type == "timeout"){ // timeout period is over
         Node* cur_node = nodes[this->receiver];
-        cur_node->valid_get_requests.erase(this->hash);
+        cur_node->sent_get_requests.erase(this->hash);
         if(cur_node->pot_blk_senders.contains(this->hash) && cur_node->pot_blk_senders[this->hash].size()>0){
             int tobe = cur_node->pot_blk_senders[this->hash].front();
 
             GET_REQ* get_req = new GET_REQ(tobe,this->sender,this->hash);
             get_req->timeout_event = new Event("timeout",current_time+timeout);
             events.insert(get_req->timeout_event);
-            cur_node->valid_get_requests[this->hash] = get_req;
+            cur_node->sent_get_requests[this->hash] = get_req;
             forward_get_req(cur_node,this->hash,get_req);
         }
     }
     else if(this->event_type == "rec_block"){
         // If not valid, return.
         Node* cur_node = nodes[this->receiver];
-        if(!cur_node->valid_get_requests.contains(this->hash) || cur_node->valid_get_requests[this->hash]!=this->get_req) return;
-        events.erase(this->get_req->timeout_event);
+        if(this->get_req->hash != this->blk->getHash()) return;
+
+        if(events.contains(this->get_req->timeout_event)){
+            events.erase(this->get_req->timeout_event);
+            delete this->get_req->timeout_event;
+        }
+
         delete this->get_req;
-        cur_node->valid_get_requests.erase(this->hash);
+        cur_node->sent_get_requests.erase(this->hash);
         cur_node->pot_blk_senders.erase(this->hash);
 
         if(!cur_node->check_balance_validity(this->blk)) return;
@@ -166,20 +166,21 @@ void Event::process_event(){
 
         if(!cur_node->blk_id_to_pointer.contains(this->blk->prev_blk_id)){
             cur_node->orphaned_blocks.insert({this->blk,current_time});
-            // forward_blocks(cur_node,this->blk,this->sender);
+            cur_node->hash_to_block[b->getHash()] = b;
             forward_hash(cur_node,this->blk,this->sender);
+            if(cur_node->is_malicious) forward_hash(cur_node,this->blk,this->sender,true);
             return;
         }
 
         Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
         if(!cur_node->update_tree_and_add(this->blk,prev_block)) return;
-        cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << "," << this->blk->block_size/TXN_SIZE << endl;
+        cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << "," << this->blk->block_size/TXN_SIZE << nodes[this->blk->miner]->is_malicious << endl;
 
         for(auto& [b, t]:cur_node->orphaned_blocks){
             if(cur_node->blk_id_to_pointer[b->prev_blk_id]){
                 cur_node->check_balance_validity(b);
                 if(cur_node->update_tree_and_add(b,cur_node->blk_id_to_pointer[b->prev_blk_id])){
-                    cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << endl;
+                    cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << this->blk->block_size/TXN_SIZE << nodes[this->blk->miner]->is_malicious << endl;
                 }
                 cur_node->orphaned_blocks.erase({b,t});
             }
@@ -187,7 +188,8 @@ void Event::process_event(){
         }
 
         // forward_blocks(cur_node,this->blk,this->sender);
-        forward_hash(cur_node,this->blk,this->sender);
-
+        cur_node->hash_to_block[this->blk->getHash()] = this->blk;
+        if(!cur_node->is_malicious || nodes[this->blk->miner]!=ringmaster) forward_hash(cur_node,this->blk,this->sender);
+        if(cur_node->is_malicious) forward_hash(cur_node,this->blk,this->sender,true);
     }
 }
