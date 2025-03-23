@@ -32,11 +32,14 @@ bool Malicious_Node::check_private_block(Block*b){
     return true;
 }
 
-void Malicious_Node::forward_broad_pvt_chain_msg(){
+void Malicious_Node::forward_broad_pvt_chain_msg(int event_sender){
     unordered_set<int>* neigh = get_neighbours(this,true);
     for(int j:*neigh){
+        if(j==event_sender) continue;
         long double travelling_time = find_travelling_time(this->node_id,j,HASH_SIZE,true);
         Event* e = new Event("broadcast private chain",current_time+travelling_time);
+
+        
         e->msg_size = HASH_SIZE;
         e->sender = this->node_id;
         e->receiver = j;

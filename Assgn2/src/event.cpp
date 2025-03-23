@@ -167,7 +167,8 @@ void Event::process_event(){
         if(this->sent_on_overlay && !cur_node->is_malicious){cerr << "Mishap happened";exit(1);}
         
         bool sent_on_overlay = this->sent_on_overlay;
-        if(cur_node->is_malicious && !no_eclipse_attack && !nodes[this->sender]->is_malicious) {return;}
+        bool is_ring_block = cur_node->hash_to_block[this->hash]->miner == ringmaster->node_id;
+        if(cur_node->is_malicious && !no_eclipse_attack && !nodes[this->sender]->is_malicious && !is_ring_block) {return;}
 
         // if(cur_node->node_id==ringmaster->node_id
         //      && cur_node->hash_to_block[this->hash]->miner==ringmaster->node_id) cerr << "Aaya: " << cur_node->hash_to_block[this->hash]->blk_id << "on " << this->sent_on_overlay << endl;
@@ -203,12 +204,16 @@ void Event::process_event(){
     else if(this->event_type == "broadcast private chain"){
         cerr << "kr rhe h" << endl;
         Malicious_Node* cur_node = (Malicious_Node*)nodes[this->receiver];
+        if(cur_node->private_chain.size()==0) return;
+        
         if(this->sent_on_overlay && !cur_node->is_malicious){cerr << "Mishap happened";exit(1);}
+        
+        cur_node->forward_broad_pvt_chain_msg(this->sender);
         unordered_set<int>* neigh = get_neighbours(cur_node,false);
         for(int j:*neigh){
             if(nodes[j]->is_malicious) continue;
             for(Block*b:cur_node->private_chain){
-                forward_hash(cur_node,b,this->receiver);
+                forward_hash(cur_node,b,j);
             }
         }
         cur_node->private_chain = vector<Block*>();   
@@ -287,7 +292,7 @@ void Event::process_event(){
                     m->private_chain_leaf = b;
                     m->private_balances = m->balances;
                     if(m->private_chain.size()>0) {cerr << "Invalid state" << endl;}
-                    m->private_chain = vector<Block*>();
+                    // m->private_chain = vector<Block*>();
                     
                     if(m->latest_mining_event){
                         events.erase(m->latest_mining_event);
