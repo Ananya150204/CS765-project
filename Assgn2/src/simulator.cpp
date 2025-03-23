@@ -21,7 +21,8 @@ Malicious_Node* ringmaster;
 Block* genesis_block = new Block();
 
 // auto seed = rd();
-auto seed = 1461198227;
+// auto seed = 1461198227;
+auto seed = 42;
 mt19937 gen(seed);
 
 long int draw_from_uniform(long int low,long int high){
@@ -291,6 +292,5 @@ int main(int argc, char* argv[]) {
         nodes[i+1]->print_stats(outFile2);
         nodes[i+1]->outFile.close();
     }
-
     return 0;
 } 

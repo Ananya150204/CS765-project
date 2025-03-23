@@ -9,7 +9,7 @@ Event::Event(string event_type,ld timestamp,Transaction*txn,int sender){
 
 // Calculates the time taken to travel from node i to node j given a particular
 // message size
-long double find_travelling_time(int i,int j,int msg_size,bool overlay = false){
+long double find_travelling_time(int i,int j,int msg_size,bool overlay){
     long double travelling_time = rhos[i][j]*1000;
     if(overlay) travelling_time = rhos_overlay[i][j]*1000;
     long double c_i_j = 100;
@@ -200,6 +200,19 @@ void Event::process_event(){
             forward_get_req(cur_node,this->hash,get_req);
         }
     }
+    else if(this->event_type == "broadcast private chain"){
+        cerr << "kr rhe h" << endl;
+        Malicious_Node* cur_node = (Malicious_Node*)nodes[this->receiver];
+        if(this->sent_on_overlay && !cur_node->is_malicious){cerr << "Mishap happened";exit(1);}
+        unordered_set<int>* neigh = get_neighbours(cur_node,false);
+        for(int j:*neigh){
+            if(nodes[j]->is_malicious) continue;
+            for(Block*b:cur_node->private_chain){
+                forward_hash(cur_node,b,this->receiver);
+            }
+        }
+        cur_node->private_chain = vector<Block*>();   
+    }
     else if(this->event_type == "rec_block"){
         // If not valid, return.
         Node* cur_node = nodes[this->receiver];
@@ -224,6 +237,7 @@ void Event::process_event(){
             if(!current_node->check_private_block(b)) {cerr << "private invalid" << endl;return;}
             current_node->blk_id_to_pointer[b->blk_id] = b;
             current_node->blockchain_tree[b->prev_blk_id].insert(b->blk_id);
+            current_node->private_chain.push_back(b);
 
             if(current_node->private_chain_leaf->depth < b->depth){
                 current_node->private_chain_leaf = b;
@@ -234,10 +248,10 @@ void Event::process_event(){
         }
         else{
             Block* b = this->blk;
-            if(!cur_node->check_balance_validity(b)) return;
+            if(!cur_node->check_balance_validity(b)) {cerr << b->miner << endl;return;}
 
             if(!cur_node->blk_id_to_pointer.contains(b->prev_blk_id)){
-                cur_node->orphaned_blocks.insert({b,current_time});
+                cur_node->orphaned_blocks[b]=current_time;
                 cur_node->hash_to_block[b->getHash()] = b;
                 forward_hash(cur_node,b,this->sender,this->sent_on_overlay);
                 if(cur_node->is_malicious && !this->sent_on_overlay) forward_hash(cur_node,b,this->sender,true);
@@ -245,23 +259,50 @@ void Event::process_event(){
             }
 
             Block* prev_block = cur_node->blk_id_to_pointer[b->prev_blk_id];
-            if(!cur_node->update_tree_and_add(b,prev_block)) return;
+            if(!cur_node->update_tree_and_add(b,prev_block)) {cerr << b->miner << endl;return;}
             cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << current_time << "," << current_time << "," << b->block_size/TXN_SIZE << nodes[b->miner]->is_malicious << endl;
 
-            for(auto& [b, t]:cur_node->orphaned_blocks){
-                if(cur_node->blk_id_to_pointer[b->prev_blk_id]){
+            auto it = cur_node->orphaned_blocks.begin();
+            while(it!=cur_node->orphaned_blocks.end()){
+                Block*b = it->first;
+                long double t = it->second;
+                if(cur_node->blk_id_to_pointer.contains(b->prev_blk_id)){
                     cur_node->check_balance_validity(b);
                     if(cur_node->update_tree_and_add(b,cur_node->blk_id_to_pointer[b->prev_blk_id])){
                         cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << b->block_size/TXN_SIZE << nodes[b->miner]->is_malicious << endl;
                     }
-                    cur_node->orphaned_blocks.erase({b,t});
+                    it = cur_node->orphaned_blocks.erase(it);
                 }
+                else it++;
                 // Forwarding orphaned block here is not required since we are forwarding every valid block when it is received.
             }
 
             cur_node->hash_to_block[b->getHash()] = b;
             forward_hash(cur_node,b,this->sender,this->sent_on_overlay);
             if(cur_node->is_malicious && !this->sent_on_overlay) forward_hash(cur_node,b,this->sender,true);
+
+            if(cur_node->is_malicious){
+                Malicious_Node* m = (Malicious_Node*)cur_node;
+                if(m->private_chain_leaf->depth < b->depth){
+                    m->private_chain_leaf = b;
+                    m->private_balances = m->balances;
+                    if(m->private_chain.size()>0) {cerr << "Invalid state" << endl;}
+                    m->private_chain = vector<Block*>();
+                    
+                    if(m->latest_mining_event){
+                        events.erase(m->latest_mining_event);
+                        long int cancel_hone_wala_id = m->latest_mining_event->blk->blk_id;
+                        delete m->latest_mining_event;
+                        events.insert(m->generate_block_event(cancel_hone_wala_id));
+                    }
+                }
+                if(cur_node->node_id == ringmaster->node_id){
+                    if((m->private_chain.size()>0 && m->private_chain_leaf->depth == b->depth) || (m->private_chain_leaf->depth == 1+b->depth && m->private_chain_leaf->prev_blk_id!=m->longest_chain_leaf->blk_id)){
+                        cerr << "ATTACK!" << endl;
+                        m->forward_broad_pvt_chain_msg();
+                    }
+                }
+            }
         }
     }
 }

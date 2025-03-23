@@ -41,6 +41,7 @@ class Event{
         ld timestamp;
         Transaction* txn;
         Block* blk;
+        int msg_size;
         size_t hash;
         int sender;
         int receiver;
@@ -65,7 +66,7 @@ class Node{
 
         unordered_map<long int,unordered_set<long int>> blockchain_tree;       // tree[parent] = child
         unordered_map<long int,Block*> blk_id_to_pointer;       // 1 is the block id of genesis block and 0 denotes null block
-        set<pair<Block*,long double>> orphaned_blocks;
+        map<Block*,long double> orphaned_blocks;
         Block* longest_chain_leaf;
         unordered_set<int> neighbours;
         unordered_map<long int,Transaction*> mempool;
@@ -90,11 +91,12 @@ class Node{
 class Malicious_Node:public Node{
     public:
     unordered_set<int> overlay_neighbours;
-    unordered_map<long int,Block*> private_chain;
+    vector<Block*> private_chain;
     Block* private_chain_leaf;
     Malicious_Node(long int node_id, bool is_slow,bool is_malicious);
     vector<long int> private_balances;
     bool check_private_block(Block*);
+    void forward_broad_pvt_chain_msg();
 };
 
 class Block{
@@ -142,8 +144,8 @@ long int draw_from_uniform(long int low,long int high);
 double draw_from_exp(double lambda);
 double draw_from_uniform_cont(double low, double high);
 
-
 unordered_set<int>* get_neighbours(Node*n,bool overlay);
+long double find_travelling_time(int i,int j,int msg_size,bool overlay = false);
 #endif
 
 
