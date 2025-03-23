@@ -9,7 +9,7 @@ Node::Node(long int node_id, bool is_slow,bool is_malicious){
     
     this->blk_id_to_pointer[1] = genesis_block;
     this->longest_chain_leaf = genesis_block;
-    this->latest_mining_event = 0;
+    this->latest_mining_event = NULL;
     this->balances = vector<long int>(num_peers+1,0);
     this->outFile.open("outputs/block_arrivals/" + to_string(this->node_id) + ".csv",ios::out);
     this->outFile << "Block_ID" << "," << "Prev_Blk_ID" << "," << "Arrival_time" << "," << "Time_addn_to_tree" << "," << "Num_txns," << "is_malicious_mined" << endl;
@@ -18,11 +18,9 @@ Node::Node(long int node_id, bool is_slow,bool is_malicious){
 // Generates transactions as per the problem specifications.
 Transaction* Node:: generate_transaction(){            
     long int val = draw_from_uniform(1,num_peers);
-    // uniform_int_distribution<> dist(1, num_peers);
     Transaction* t = new Transaction(++txn_counter,this->node_id,val,0);
     if(this->balances[this->node_id]>0){
         val = draw_from_uniform(1,this->balances[this->node_id]);
-        // uniform_int_distribution<> dist2(1, this->balances[this->node_id]);
         t->num_coins = val;
     }
     return t;
@@ -33,8 +31,6 @@ Transaction* Node:: generate_transaction(){
 Event* Node:: generate_trans_event(){
     Transaction* t = generate_transaction();
     
-    // exponential_distribution<> exp_dist(1/transaction_mean_time);          
-    // long double value = exp_dist(gen);
     double value = draw_from_exp(1/transaction_mean_time);
     
     Event *e = new Event("gen_trans",value+current_time,t,this->node_id);
@@ -46,23 +42,24 @@ Event* Node:: generate_trans_event(){
 // Whether this block gets added to the tree will be decided at the time of
 // processing this event.
 Event* Node:: generate_block_event(long int id){       
+    if(this->is_malicious && this->node_id!=ringmaster->node_id) {cerr << "mishap" << endl;exit(1);}
     Block* to_be_mined = new Block();
     to_be_mined->miner = this->node_id;
-
+    
     if(this->is_malicious) to_be_mined->prev_blk_id = ((Malicious_Node*)this)->private_chain_leaf->blk_id;
     else to_be_mined->prev_blk_id = this->longest_chain_leaf->blk_id;
-
+    
     to_be_mined->depth = 1 + this->blk_id_to_pointer[to_be_mined->prev_blk_id]->depth;
     if(id==-1) to_be_mined->blk_id  = ++blk_counter;
     else to_be_mined->blk_id = id;
-
-    exponential_distribution<> dis(this->hash_power/block_mean_time);
-    to_be_mined->timestamp = current_time + dis(gen);
+    
+    to_be_mined->timestamp = current_time + draw_from_exp(this->hash_power/block_mean_time);
     Event *e = new Event("gen_block",to_be_mined->timestamp);
     e->blk = to_be_mined;
     e->sender = this->node_id;
     this->latest_mining_event = e;
-    
+    if(this->node_id == 35 && e->timestamp > 30000000) cerr << e->blk << endl;
+
     int counter = 0;
     vector<long int> temp = this->balances;
     if(this->is_malicious) temp = ((Malicious_Node*)this)->private_balances;

@@ -207,7 +207,6 @@ void Event::process_event(){
         }
     }
     else if(this->event_type == "broadcast private chain"){
-        cerr << "kr rhe h" << endl;
         Malicious_Node* cur_node = (Malicious_Node*)nodes[this->receiver];
         if(cur_node->private_chain.size()==0) return;
         
@@ -268,6 +267,8 @@ void Event::process_event(){
                 return;
             }
 
+            // cerr << "Received block: " << b->blk_id << " from " << b->miner << " by " << cur_node->node_id << " " << cur_node->latest_mining_event->blk->blk_id << endl;
+
             Block* prev_block = cur_node->blk_id_to_pointer[b->prev_blk_id];
             if(!cur_node->update_tree_and_add(b,prev_block)) {cerr << b->miner << endl;return;}
             cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << current_time << "," << current_time << "," << b->block_size/TXN_SIZE << "," << nodes[b->miner]->is_malicious << endl;
@@ -296,7 +297,6 @@ void Event::process_event(){
                 if(m->private_chain_leaf->depth < b->depth){
                     m->private_chain_leaf = b;
                     m->private_balances = m->balances;
-                    if(m->private_chain.size()>0) {cerr << "Invalid state" << endl;}
                     m->private_chain = vector<Block*>();
                     
                     if(m->latest_mining_event){

@@ -22,7 +22,7 @@ Block* genesis_block = new Block();
 
 // auto seed = rd();
 // auto seed = 1461198227;
-auto seed = 42;
+auto seed = 3342750228;      // seg fault
 mt19937 gen(seed);
 
 long int draw_from_uniform(long int low,long int high){
@@ -151,9 +151,19 @@ void generate_graph(bool overlay=false){
         neigh->insert(curr_node);
         in_tree.push_back(curr_node);
     }
+    
     for(int i:node_list){
         unordered_set<int>* neigh = get_neighbours(nodes[i],overlay);
+        for(auto j:*neigh){
+            if(overlay)rhos_overlay[i][j] = rhos_overlay[j][i] = draw_from_uniform_cont(1,10);
+            else rhos[i][j] = rhos[j][i] = draw_from_uniform_cont(10,500);
+        }
+    }
+    if(node_list.size() <= 3){cerr << "Too less nodes" << endl;exit(1);}
 
+    for(int i:node_list){
+        unordered_set<int>* neigh = get_neighbours(nodes[i],overlay);
+        
         while(neigh->size() < 3){
             int val = node_list[draw_from_uniform(0,node_list.size()-1)];
             unordered_set<int>* other = get_neighbours(nodes[val],overlay);
@@ -165,14 +175,6 @@ void generate_graph(bool overlay=false){
             } 
             neigh->insert(val);
             other->insert(i);
-        }
-    }
-
-    for(int i:node_list){
-        unordered_set<int>* neigh = get_neighbours(nodes[i],overlay);
-        for(auto j:*neigh){
-            if(overlay)rhos_overlay[i][j] = rhos_overlay[j][i] = draw_from_uniform_cont(1,10);
-            else rhos[i][j] = rhos[j][i] = draw_from_uniform_cont(10,500);
         }
     }
 }
@@ -198,7 +200,7 @@ void generate_nodes(){
 
     shuffle(temp.begin(),temp.end(),gen);
 
-    if(malicious_nodes + slow_nodes > num_peers) {cout << "Impossible";exit(1);}
+    if(malicious_nodes + slow_nodes > num_peers) {cout << "Impossible" << endl;exit(1);}
 
     long int c=0;
     while(slow_nodes > 0){
@@ -236,6 +238,7 @@ void run_events(){
         }
         else if(e->event_type == "gen_block"){
             // cerr << "processed gen block of " << e->sender << " at " << current_time << endl;
+            if(e->sender == 35) cerr << "yaha" << endl;
             events.insert(nodes[e->sender]->generate_block_event());
         }
         delete e;
