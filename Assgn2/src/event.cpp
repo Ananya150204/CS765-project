@@ -128,6 +128,9 @@ void Event::process_event(){
             current_node->blk_id_to_pointer[b->blk_id] = b;
             current_node->blockchain_tree[b->prev_blk_id].insert(b->blk_id);
 
+            current_node->total_blocks++;
+            current_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << "," << this->blk->block_size/TXN_SIZE << "," << nodes[this->blk->miner]->is_malicious << endl;
+
             if(current_node->private_chain_leaf->depth < b->depth){
                 current_node->private_chain_leaf = b;
                 current_node->remove_txns_from_mempool(b);
@@ -139,8 +142,10 @@ void Event::process_event(){
             if(!cur_node->check_balance_validity(this->blk)) return;
             Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
             if(!cur_node->update_tree_and_add(this->blk,prev_block,false)) return;
+
             cur_node->total_blocks++;
-            cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << this->blk->block_size/TXN_SIZE << nodes[this->blk->miner]->is_malicious << endl;
+            cur_node->outFile << this->blk->blk_id << "," << this->blk->prev_blk_id << "," << current_time << "," << current_time << "," << this->blk->block_size/TXN_SIZE << "," << nodes[this->blk->miner]->is_malicious << endl;
+
             cur_node->hash_to_block[this->blk->getHash()] = this->blk;
             forward_hash(nodes[this->sender],this->blk,this->sender);
         }
@@ -265,7 +270,7 @@ void Event::process_event(){
 
             Block* prev_block = cur_node->blk_id_to_pointer[b->prev_blk_id];
             if(!cur_node->update_tree_and_add(b,prev_block)) {cerr << b->miner << endl;return;}
-            cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << current_time << "," << current_time << "," << b->block_size/TXN_SIZE << nodes[b->miner]->is_malicious << endl;
+            cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << current_time << "," << current_time << "," << b->block_size/TXN_SIZE << "," << nodes[b->miner]->is_malicious << endl;
 
             auto it = cur_node->orphaned_blocks.begin();
             while(it!=cur_node->orphaned_blocks.end()){
@@ -274,7 +279,7 @@ void Event::process_event(){
                 if(cur_node->blk_id_to_pointer.contains(b->prev_blk_id)){
                     cur_node->check_balance_validity(b);
                     if(cur_node->update_tree_and_add(b,cur_node->blk_id_to_pointer[b->prev_blk_id])){
-                        cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << b->block_size/TXN_SIZE << nodes[b->miner]->is_malicious << endl;
+                        cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << "," << b->block_size/TXN_SIZE << "," << nodes[b->miner]->is_malicious << endl;
                     }
                     it = cur_node->orphaned_blocks.erase(it);
                 }
@@ -292,7 +297,7 @@ void Event::process_event(){
                     m->private_chain_leaf = b;
                     m->private_balances = m->balances;
                     if(m->private_chain.size()>0) {cerr << "Invalid state" << endl;}
-                    // m->private_chain = vector<Block*>();
+                    m->private_chain = vector<Block*>();
                     
                     if(m->latest_mining_event){
                         events.erase(m->latest_mining_event);
