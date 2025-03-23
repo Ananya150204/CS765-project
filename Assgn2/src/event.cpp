@@ -120,9 +120,10 @@ void Event::process_event(){
     else if(this->event_type == "gen_block"){
         Node* cur_node = nodes[this->sender];
         if(this->sent_on_overlay && !cur_node->is_malicious){cerr << "Mishap happened";exit(1);}
-        if(cur_node->is_malicious && ringmaster->node_id==cur_node->node_id){ 
-            Malicious_Node* current_node = (Malicious_Node*)cur_node;
+        if(ringmaster->node_id==cur_node->node_id){ 
             Block*b = this->blk;
+            Malicious_Node* current_node = (Malicious_Node*)cur_node;
+            if(!current_node->check_private_block(b)) return;
             Block*prev_block = current_node->blk_id_to_pointer[this->blk->prev_blk_id];
             current_node->blk_id_to_pointer[b->blk_id] = b;
             current_node->blockchain_tree[b->prev_blk_id].insert(b->blk_id);
@@ -134,7 +135,7 @@ void Event::process_event(){
             cur_node->hash_to_block[this->blk->getHash()] = this->blk;
             forward_hash(nodes[this->sender],this->blk,this->sender,true);
         }
-        else{   // honest waalo ka hisaab
+        else{   // honest and other malicious waalo ka hisaab
             if(!cur_node->check_balance_validity(this->blk)) return;
             Block* prev_block = cur_node->blk_id_to_pointer[this->blk->prev_blk_id];
             if(!cur_node->update_tree_and_add(this->blk,prev_block,false)) return;
@@ -166,14 +167,16 @@ void Event::process_event(){
         if(this->sent_on_overlay && !cur_node->is_malicious){cerr << "Mishap happened";exit(1);}
         
         bool sent_on_overlay = this->sent_on_overlay;
-        if(cur_node->is_malicious && !no_eclipse_attack && !nodes[this->sender]->is_malicious) return;
+        if(cur_node->is_malicious && !no_eclipse_attack && !nodes[this->sender]->is_malicious) {return;}
 
-        if(cur_node==ringmaster) cerr << "AAya: " << cur_node->hash_to_block[this->hash]->blk_id << endl;
+        // if(cur_node->node_id==ringmaster->node_id
+        //      && cur_node->hash_to_block[this->hash]->miner==ringmaster->node_id) cerr << "Aaya: " << cur_node->hash_to_block[this->hash]->blk_id << "on " << this->sent_on_overlay << endl;
 
         if(cur_node->hash_to_block.contains(this->hash)){
             Block* b = cur_node->hash_to_block[this->hash];
             long double travelling_time = find_travelling_time(this->receiver,this->sender,b->block_size,sent_on_overlay);
             Event* e = new Event("rec_block",current_time+travelling_time);
+            // if(cur_node->node_id==ringmaster->node_id) cerr << current_time+timestamp << endl;
             e->sent_on_overlay = sent_on_overlay;
             e->sender = this->receiver;
             e->blk = b;
@@ -214,11 +217,11 @@ void Event::process_event(){
         // If block already there in the tree of receiver (of this event) then do nothing.
         if(cur_node->blk_id_to_pointer.find(this->blk->blk_id) !=  cur_node->blk_id_to_pointer.end()) return; 
 
-        if(this->sent_on_overlay && nodes[this->blk->miner]==ringmaster){
+        if(this->sent_on_overlay && nodes[this->blk->miner]->node_id==ringmaster->node_id){
             Malicious_Node* current_node = (Malicious_Node*)cur_node;
             Block*b = this->blk;
             Block* prev_block = cur_node->blk_id_to_pointer[b->prev_blk_id];
-            if(!current_node->check_private_block(b)) return;
+            if(!current_node->check_private_block(b)) {cerr << "private invalid" << endl;return;}
             current_node->blk_id_to_pointer[b->blk_id] = b;
             current_node->blockchain_tree[b->prev_blk_id].insert(b->blk_id);
 

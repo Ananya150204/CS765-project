@@ -17,11 +17,13 @@ Node::Node(long int node_id, bool is_slow,bool is_malicious){
 
 // Generates transactions as per the problem specifications.
 Transaction* Node:: generate_transaction(){            
-    uniform_int_distribution<> dist(1, num_peers);
-    Transaction* t = new Transaction(++txn_counter,this->node_id,dist(gen),0);
+    long int val = draw_from_uniform(1,num_peers);
+    // uniform_int_distribution<> dist(1, num_peers);
+    Transaction* t = new Transaction(++txn_counter,this->node_id,val,0);
     if(this->balances[this->node_id]>0){
-        uniform_int_distribution<> dist2(1, this->balances[this->node_id]);
-        t->num_coins = dist2(gen);
+        val = draw_from_uniform(1,this->balances[this->node_id]);
+        // uniform_int_distribution<> dist2(1, this->balances[this->node_id]);
+        t->num_coins = val;
     }
     return t;
 }
@@ -31,8 +33,10 @@ Transaction* Node:: generate_transaction(){
 Event* Node:: generate_trans_event(){
     Transaction* t = generate_transaction();
     
-    exponential_distribution<> exp_dist(1/transaction_mean_time);          
-    long double value = exp_dist(gen);
+    // exponential_distribution<> exp_dist(1/transaction_mean_time);          
+    // long double value = exp_dist(gen);
+    double value = draw_from_exp(1/transaction_mean_time);
+    
     Event *e = new Event("gen_trans",value+current_time,t,this->node_id);
     return e;
 }
@@ -61,6 +65,7 @@ Event* Node:: generate_block_event(long int id){
     
     int counter = 0;
     vector<long int> temp = this->balances;
+    if(this->is_malicious) temp = ((Malicious_Node*)this)->private_balances;
     for(auto it:this->mempool){
         counter++;
         if(counter > MAX_TXNS){        // Excluding coinbase
@@ -131,7 +136,9 @@ bool Node:: traverse_to_genesis_and_check(Block*b,bool reset_balance){
     if(reset_balance){
         for(auto i=0;i<num_peers;i++){
             this->balances[i+1] = delta[i+1];
-            if(this->is_malicious)(((Malicious_Node*)this)->private_balances)[i+1] = delta[i+1];
+            // Malicious_Node* m = (Malicious_Node*)this;
+
+            // if(this->is_malicious && b->depth > m->private_chain_leaf->depth)m->private_balances[i+1] = delta[i+1];
         }
     }
     return true;
@@ -173,7 +180,7 @@ bool Node:: update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_eve
 
     if(this->longest_chain_leaf->depth < b->depth){
         this->longest_chain_leaf = b;
-        if(this->is_malicious) ((Malicious_Node*)this)->private_chain_leaf = b;
+        // if(this->is_malicious) ((Malicious_Node*)this)->private_chain_leaf = b;
         this->remove_txns_from_mempool(b);
         if(this->latest_mining_event && del_lat_mining_event){
             events.erase(this->latest_mining_event);
@@ -203,6 +210,10 @@ bool Node:: check_balance_validity(Block*b){
         }
         for(auto i=0;i<num_peers;i++){
             this->balances[i+1] = delta[i+1];
+            // Malicious_Node* m = (Malicious_Node*)this;
+            // if(this->is_malicious && b->depth > m->private_chain_leaf->depth){
+            //     m->private_balances[i+1] = delta[i+1];
+            // }
         }
     }
     return true;

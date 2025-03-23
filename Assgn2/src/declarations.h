@@ -138,6 +138,11 @@ extern vector<long int> malicious_node_list;
 extern Malicious_Node* ringmaster;
 extern Block* genesis_block;
 
+long int draw_from_uniform(long int low,long int high);
+double draw_from_exp(double lambda);
+double draw_from_uniform_cont(double low, double high);
+
+
 unordered_set<int>* get_neighbours(Node*n,bool overlay);
 #endif
 

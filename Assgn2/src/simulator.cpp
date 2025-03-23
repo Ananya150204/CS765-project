@@ -24,16 +24,26 @@ Block* genesis_block = new Block();
 auto seed = 1461198227;
 mt19937 gen(seed);
 
-int draw_from_uniform(int low,int high){
+long int draw_from_uniform(long int low,long int high){
     if(low > high) {cout << "Invalid range passed in draw_from_uniform" << endl;exit(1);}
-    uniform_int_distribution<> dis(low, high);
+    uniform_int_distribution<long int> dis(low, high);
     return dis(gen);
 }
 
-int draw_from_exp(int lambda){
-    exponential_distribution<> dis(lambda);
+double draw_from_exp(double lambda){
+    exponential_distribution<double> dis(lambda);
     return dis(gen);
 }
+
+double draw_from_uniform_cont(double low, double high) {
+    if (low > high) {
+        cout << "Invalid range passed in draw_from_uniform_cont" << endl;
+        exit(1);
+    }
+    uniform_real_distribution<double> dis(low, high);
+    return dis(gen);
+}
+
 
 void parse_arguments(int argc, char* argv[]) {
     argparse::ArgumentParser program("Simulator");
@@ -160,8 +170,8 @@ void generate_graph(bool overlay=false){
     for(int i:node_list){
         unordered_set<int>* neigh = get_neighbours(nodes[i],overlay);
         for(auto j:*neigh){
-            if(overlay)rhos_overlay[i][j] = rhos_overlay[j][i] = draw_from_uniform(1,10);
-            else rhos[i][j] = rhos[j][i] = draw_from_uniform(10,500);
+            if(overlay)rhos_overlay[i][j] = rhos_overlay[j][i] = draw_from_uniform_cont(1,10);
+            else rhos[i][j] = rhos[j][i] = draw_from_uniform_cont(10,500);
         }
     }
 }
@@ -224,6 +234,7 @@ void run_events(){
             events.insert(nodes[e->sender]->generate_trans_event());
         }
         else if(e->event_type == "gen_block"){
+            // cerr << "processed gen block of " << e->sender << " at " << current_time << endl;
             events.insert(nodes[e->sender]->generate_block_event());
         }
         delete e;
