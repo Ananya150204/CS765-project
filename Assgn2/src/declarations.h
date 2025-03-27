@@ -59,7 +59,7 @@ class Node{
         bool is_malicious;
         long int node_id;
         bool is_slow,is_low_cpu;
-        Event* latest_mining_event;
+        Event* latest_mining_event = nullptr;
         long double hash_power;
         long int total_blocks;
         ofstream outFile;

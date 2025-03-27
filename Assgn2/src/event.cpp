@@ -161,7 +161,7 @@ void Event::process_event(){
             GET_REQ* get_req = new GET_REQ(this->receiver,this->sender,this->hash);
             get_req->timeout_event = new Event("timeout",current_time+timeout);
             get_req->timeout_event->receiver = this->receiver;
-            get_req->hash = this->hash;
+            get_req->timeout_event->hash = this->hash;
             events.insert(get_req->timeout_event);
             cur_node->sent_get_requests[this->hash] = get_req;
             forward_get_req(cur_node,this->hash,get_req);
@@ -194,6 +194,8 @@ void Event::process_event(){
     }
     else if(this->event_type == "timeout"){ // timeout period is over
         Node* cur_node = nodes[this->receiver];
+        if(!cur_node->sent_get_requests.contains(this->hash)) {cerr << "hash not found in timeout";}
+
         cur_node->sent_get_requests.erase(this->hash);
         if(cur_node->pot_blk_senders.contains(this->hash) && cur_node->pot_blk_senders[this->hash].size()>0){
             auto tmp = cur_node->pot_blk_senders[this->hash].front();
@@ -202,6 +204,7 @@ void Event::process_event(){
             GET_REQ* get_req = new GET_REQ(this->receiver,tobe,this->hash);
             get_req->timeout_event = new Event("timeout",current_time+timeout);
             get_req->timeout_event->receiver = this->receiver;
+            get_req->timeout_event->hash = this->hash;
             events.insert(get_req->timeout_event);
             cur_node->sent_get_requests[this->hash] = get_req;
             forward_get_req(cur_node,this->hash,get_req);
