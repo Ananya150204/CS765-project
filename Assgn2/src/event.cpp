@@ -199,8 +199,9 @@ void Event::process_event(){
             auto tmp = cur_node->pot_blk_senders[this->hash].front();
             int tobe = tmp.first;
 
-            GET_REQ* get_req = new GET_REQ(tobe,this->sender,this->hash);
+            GET_REQ* get_req = new GET_REQ(this->receiver,tobe,this->hash);
             get_req->timeout_event = new Event("timeout",current_time+timeout);
+            get_req->timeout_event->receiver = this->receiver;
             events.insert(get_req->timeout_event);
             cur_node->sent_get_requests[this->hash] = get_req;
             forward_get_req(cur_node,this->hash,get_req);
