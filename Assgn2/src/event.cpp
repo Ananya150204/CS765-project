@@ -248,7 +248,10 @@ void Event::process_event(){
             Malicious_Node* current_node = (Malicious_Node*)cur_node;
             Block*b = this->blk;
             if(!cur_node->blk_id_to_pointer.contains(b->prev_blk_id)) {
-                cerr << "orphaned private block " << endl;
+                current_node->private_orphaned_blocks[b] = current_time;
+                current_node->hash_to_block[b->getHash()] = b;
+                forward_hash(current_node,b,this->sender,true);
+                return;
             }
             Block* prev_block = cur_node->blk_id_to_pointer[b->prev_blk_id];
             if(!current_node->check_private_block(b)) {cerr << "private invalid" << endl;return;}
@@ -260,6 +263,23 @@ void Event::process_event(){
                 current_node->private_chain_leaf = b;
                 current_node->remove_txns_from_mempool(b);
             }
+
+            current_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << current_time << "," << current_time << "," << b->block_size/TXN_SIZE << "," << nodes[b->miner]->is_malicious << endl;
+
+            auto it = current_node->private_orphaned_blocks.begin();
+            while(it!=current_node->private_orphaned_blocks.end()){
+                Block*b = it->first;
+                long double t = it->second;
+                if(current_node->blk_id_to_pointer.contains(b->prev_blk_id)){
+                    if(current_node->check_private_block(b)){
+                        current_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << "," << b->block_size/TXN_SIZE << "," << nodes[b->miner]->is_malicious << endl;
+                    }
+                    it = current_node->private_orphaned_blocks.erase(it);
+                }
+                else it++;
+                // Forwarding orphaned block here is not required since we are forwarding every valid block when it is received.
+            }
+
             current_node->hash_to_block[b->getHash()] = b;
             forward_hash(current_node,b,this->sender,true);
             if(current_node->attack_enabled) forward_hash(current_node,b,this->sender,false);
@@ -285,8 +305,7 @@ void Event::process_event(){
                 Block*b = it->first;
                 long double t = it->second;
                 if(cur_node->blk_id_to_pointer.contains(b->prev_blk_id)){
-                    cur_node->check_balance_validity(b);
-                    if(cur_node->update_tree_and_add(b,cur_node->blk_id_to_pointer[b->prev_blk_id])){
+                    if(cur_node->check_balance_validity(b) && cur_node->update_tree_and_add(b,cur_node->blk_id_to_pointer[b->prev_blk_id])){
                         cur_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << "," << b->block_size/TXN_SIZE << "," << nodes[b->miner]->is_malicious << endl;
                     }
                     it = cur_node->orphaned_blocks.erase(it);

@@ -96,8 +96,10 @@ class Malicious_Node:public Node{
     unordered_set<int> overlay_neighbours;
     vector<Block*> private_chain;
     Block* private_chain_leaf;
-    Malicious_Node(long int node_id, bool is_slow,bool is_malicious);
     vector<long int> private_balances;
+    map<Block*,long double> private_orphaned_blocks;
+
+    Malicious_Node(long int node_id, bool is_slow,bool is_malicious);
     bool check_private_block(Block*);
     void forward_broad_pvt_chain_msg(int event_sender=-1);
 };
