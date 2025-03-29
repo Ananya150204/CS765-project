@@ -11,7 +11,6 @@ typedef long double ld;
 
 extern int num_peers;
 extern double slow_percent;
-extern double low_cpu_percent;
 extern long double transaction_mean_time;
 extern long double block_mean_time;
 extern long double current_time;
@@ -36,11 +35,11 @@ class GET_REQ;
 class Event{
     public:
         bool sent_on_overlay=false;
-        GET_REQ* get_req;
+        GET_REQ* get_req = NULL;
         string event_type;
         ld timestamp;
-        Transaction* txn;
-        Block* blk;
+        Transaction* txn = NULL;
+        Block* blk = NULL;
         int msg_size;
         size_t hash;
         int sender;
@@ -51,15 +50,18 @@ class Event{
 };
 
 inline auto comp = [](Event* a,Event* b)->bool{
-    return a->timestamp < b->timestamp;
+    if(a->timestamp != b->timestamp)
+        return a->timestamp < b->timestamp;
+    return a<b;
 };
 
 class Node{
     public:
         bool is_malicious;
         long int node_id;
-        bool is_slow,is_low_cpu;
-        Event* latest_mining_event = nullptr;
+        bool is_slow;
+        Event* latest_mining_event = NULL;
+        
         long double hash_power;
         long int total_blocks;
         ofstream outFile;
@@ -84,12 +86,13 @@ class Node{
         void print_stats(ofstream&);
 
         unordered_map<size_t,queue<pair<int,bool>>> pot_blk_senders;
-        unordered_map<size_t,GET_REQ*> sent_get_requests;
+        unordered_map<size_t,pair<GET_REQ*,Event*>> sent_get_requests;
         unordered_map<size_t,Block*> hash_to_block;
 };
 
 class Malicious_Node:public Node{
     public:
+    bool attack_enabled = false;
     unordered_set<int> overlay_neighbours;
     vector<Block*> private_chain;
     Block* private_chain_leaf;
@@ -124,7 +127,7 @@ class Block{
 
 class GET_REQ{
     public:
-    Event* timeout_event;
+    Event* timeout_event = NULL;
     int sender,receiver;
     size_t hash;
     GET_REQ(int sender,int receiver,size_t hash){

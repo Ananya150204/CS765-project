@@ -58,7 +58,6 @@ Event* Node:: generate_block_event(long int id){
     e->blk = to_be_mined;
     e->sender = this->node_id;
     this->latest_mining_event = e;
-    if(this->node_id == 35 && e->timestamp > 30000000) cerr << e->blk << endl;
 
     int counter = 0;
     vector<long int> temp = this->balances;
@@ -133,9 +132,6 @@ bool Node:: traverse_to_genesis_and_check(Block*b,bool reset_balance){
     if(reset_balance){
         for(auto i=0;i<num_peers;i++){
             this->balances[i+1] = delta[i+1];
-            // Malicious_Node* m = (Malicious_Node*)this;
-
-            // if(this->is_malicious && b->depth > m->private_chain_leaf->depth)m->private_balances[i+1] = delta[i+1];
         }
     }
     return true;
@@ -180,7 +176,8 @@ bool Node:: update_tree_and_add(Block*b,Block*prev_block,bool del_lat_mining_eve
         // if(this->is_malicious) ((Malicious_Node*)this)->private_chain_leaf = b;
         this->remove_txns_from_mempool(b);
         if(this->latest_mining_event && del_lat_mining_event){
-            events.erase(this->latest_mining_event);
+            auto iter = events.find(this->latest_mining_event);
+            if(iter!=events.end() && *iter == this->latest_mining_event) events.erase(iter);
             long int cancel_hone_wala_id = this->latest_mining_event->blk->blk_id;
             delete this->latest_mining_event;
             events.insert(this->generate_block_event(cancel_hone_wala_id));
@@ -207,10 +204,6 @@ bool Node:: check_balance_validity(Block*b){
         }
         for(auto i=0;i<num_peers;i++){
             this->balances[i+1] = delta[i+1];
-            // Malicious_Node* m = (Malicious_Node*)this;
-            // if(this->is_malicious && b->depth > m->private_chain_leaf->depth){
-            //     m->private_balances[i+1] = delta[i+1];
-            // }
         }
     }
     return true;
@@ -223,5 +216,5 @@ void Node:: print_stats(ofstream& outFile){
         chain+= (this->blk_id_to_pointer[curr_id]->miner == this->node_id);
         curr_id = this->blk_id_to_pointer[curr_id]->prev_blk_id;
     }
-    outFile << this->node_id << "," << chain << "," << this->total_blocks << "," << !this->is_low_cpu << "," << this->is_slow << "," << this->hash_power<< endl;
+    outFile << this->node_id << "," << chain << "," << this->total_blocks << "," << this->is_slow << "," << this->hash_power<< endl;
 }

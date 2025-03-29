@@ -227,22 +227,33 @@ void generate_events(bool block){
 // Invoke the events with the earliest event coming first.
 void run_events(){
     while(!events.empty() && current_time<= end_time){
-        Event* e = *(events.begin());
-        events.erase(events.begin());
-        
+        auto it = events.begin();
+        Event* e = *it;
         current_time = e->timestamp;
+        
         e->process_event();
-
+        
         if(e->event_type == "gen_trans"){
             events.insert(nodes[e->sender]->generate_trans_event());
         }
         else if(e->event_type == "gen_block"){
-            // cerr << "processed gen block of " << e->sender << " at " << current_time << endl;
-            if(e->sender == 35) cerr << "yaha" << endl;
             events.insert(nodes[e->sender]->generate_block_event());
         }
+        
+        events.erase(it);
         delete e;
     }
+
+    // while(!events.empty()){
+    //     auto it = events.begin();
+    //     Event* e = *it;
+    //     current_time = e->timestamp;
+        
+    //     if(e->event_type!="gen_block" && e->event_type!="gen_trans") e->process_event();        
+        
+    //     events.erase(it);
+    //     delete e;   
+    // }
 }
 
 int main(int argc, char* argv[]) {
@@ -289,7 +300,7 @@ int main(int argc, char* argv[]) {
     
     ofstream outFile2("outputs/peer_stats.csv",ios::out);
     
-    outFile2 << "Node_id,Chain_Blocks,Total_Blocks,is_high_CPU,is_slow,hash_power" << endl;
+    outFile2 << "Node_id,Chain_Blocks,Total_Blocks,is_slow,hash_power" << endl;
     for(int i = 0;i<num_peers;i++){
         nodes[i+1]->print_tree_to_file();
         nodes[i+1]->print_stats(outFile2);

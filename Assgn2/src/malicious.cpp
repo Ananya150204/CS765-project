@@ -6,6 +6,11 @@ Malicious_Node::Malicious_Node(long int node_id, bool is_slow,bool is_malicious)
 }
 
 unordered_set<int>* get_neighbours(Node*n,bool overlay){
+    if(!n->is_malicious && overlay) {
+        cerr << "overlay neighbours requested for an honest node" << endl;
+        exit(1);
+    }
+
     if(overlay) return &(((Malicious_Node*)n)->overlay_neighbours);
     return &(n->neighbours);
 }
@@ -29,6 +34,7 @@ bool Malicious_Node::check_private_block(Block*b){
             this->private_balances[i+1] = delta[i+1];
         }
     }
+    else {cerr << "private block orphaned " << endl;}
     return true;
 }
 
@@ -39,7 +45,6 @@ void Malicious_Node::forward_broad_pvt_chain_msg(int event_sender){
         long double travelling_time = find_travelling_time(this->node_id,j,HASH_SIZE,true);
         Event* e = new Event("broadcast private chain",current_time+travelling_time);
 
-        
         e->msg_size = HASH_SIZE;
         e->sender = this->node_id;
         e->receiver = j;
