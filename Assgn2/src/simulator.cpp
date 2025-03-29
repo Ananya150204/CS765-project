@@ -244,16 +244,16 @@ void run_events(){
         delete e;
     }
 
-    // while(!events.empty()){
-    //     auto it = events.begin();
-    //     Event* e = *it;
-    //     current_time = e->timestamp;
+    while(!events.empty()){
+        auto it = events.begin();
+        Event* e = *it;
+        current_time = e->timestamp;
         
-    //     if(e->event_type!="gen_block" && e->event_type!="gen_trans") e->process_event();        
+        if(e->event_type!="gen_block" && e->event_type!="gen_trans") e->process_event();        
         
-    //     events.erase(it);
-    //     delete e;   
-    // }
+        events.erase(it);
+        delete e;   
+    }
 }
 
 int main(int argc, char* argv[]) {
