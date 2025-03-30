@@ -1,10 +1,12 @@
 #include "declarations.h"
 
+// constructor of malicious node
 Malicious_Node::Malicious_Node(long int node_id, bool is_slow,bool is_malicious):Node(node_id,is_slow,is_malicious){
     this->private_chain_leaf = genesis_block;
     this->private_balances = vector<long int>(num_peers+1,0);    
 }
 
+// find out the neighbors for a particular node seperately for honest and overlay   networks
 unordered_set<int>* get_neighbours(Node*n,bool overlay){
     if(!n->is_malicious && overlay) {
         cerr << "overlay neighbours requested for an honest node" << endl;
@@ -15,6 +17,8 @@ unordered_set<int>* get_neighbours(Node*n,bool overlay){
     return &(n->neighbours);
 }
 
+
+// check if the private block is valid (if balnce < 0 at some point ?) or not , if valid then update the private chain and balances 
 bool Malicious_Node::check_private_block(Block*b){
     if(b->prev_blk_id == this->private_chain_leaf->blk_id){
         vector<long int> delta = this->private_balances;
@@ -38,6 +42,8 @@ bool Malicious_Node::check_private_block(Block*b){
     return true;
 }
 
+
+// forwards the "broadcast the private chain" message to all the overlay network's neighbours of the node 
 void Malicious_Node::forward_broad_pvt_chain_msg(int event_sender){
     unordered_set<int>* neigh = get_neighbours(this,true);
     for(int j:*neigh){
