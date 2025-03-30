@@ -20,9 +20,9 @@ random_device rd;
 Malicious_Node* ringmaster;
 Block* genesis_block = new Block();
 
-// auto seed = rd();
+auto seed = rd();
 // auto seed = 1461198227;
-auto seed = 3342750228;      // seg fault
+// auto seed = 3342750228;      // seg fault
 mt19937 gen(seed);
 
 long int draw_from_uniform(long int low,long int high){
@@ -244,6 +244,7 @@ void run_events(){
         delete e;
     }
 
+    // For propagating the remaining private blocks if any
     while(!events.empty()){
         auto it = events.begin();
         Event* e = *it;

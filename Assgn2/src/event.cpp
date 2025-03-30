@@ -42,7 +42,7 @@ void forward_hash(Node*cur_node,Block*b,long int event_sender,bool overlay = fal
     }
 }
 
-
+// Forward get request to the required node
 void forward_get_req(Node*cur_node,size_t hash,GET_REQ* get_r){
     if(!cur_node->pot_blk_senders.contains(hash)) {cerr << "missing hash" << endl;exit(1);}
     auto tmp = cur_node->pot_blk_senders[hash].front();
@@ -62,7 +62,7 @@ void forward_get_req(Node*cur_node,size_t hash,GET_REQ* get_r){
 
 
 // Deals with the various types of event as :
-// gen_trans, rec_trans, gen_block, rec_block
+// gen_trans, rec_trans, gen_block, rec_block, rec_hash, rec_get_req, broadcast_private_chain
 void Event::process_event(){
     if(this->event_type == "gen_trans"){
         if(this->txn->num_coins==0) return;
@@ -175,7 +175,7 @@ void Event::process_event(){
         
         bool sent_on_overlay = this->sent_on_overlay;
         bool is_ring_block = cur_node->hash_to_block[this->hash]->miner == ringmaster->node_id;
-        if(cur_node->is_malicious && !no_eclipse_attack && !nodes[this->sender]->is_malicious && !is_ring_block) {return;}
+        if(cur_node->is_malicious && !no_eclipse_attack && !sent_on_overlay && !is_ring_block) return;
 
         if(cur_node->hash_to_block.contains(this->hash)){
             Block* b = cur_node->hash_to_block[this->hash];
@@ -210,6 +210,7 @@ void Event::process_event(){
         }
     }
     else if(this->event_type == "broadcast private chain"){
+        // Enabling the attack 
         Malicious_Node* cur_node = (Malicious_Node*)nodes[this->receiver];
         cur_node->attack_enabled = true;
         if(cur_node->private_chain.size()==0) return;
@@ -219,7 +220,6 @@ void Event::process_event(){
         cur_node->forward_broad_pvt_chain_msg(this->sender);
         unordered_set<int>* neigh = get_neighbours(cur_node,false);
         for(int j:*neigh){
-            if(nodes[j]->is_malicious) continue;
             for(Block*b:cur_node->private_chain){
                 forward_hash(cur_node,b,j);
             }
@@ -227,12 +227,13 @@ void Event::process_event(){
         cur_node->private_chain = vector<Block*>();   
     }
     else if(this->event_type == "rec_block"){
-        // If not valid, return.
         Node* cur_node = nodes[this->receiver];
         if(this->sent_on_overlay && !cur_node->is_malicious){cerr << "Mishap happened" << endl;exit(1);}
-
+        
+        // If not valid, return.
         if(this->get_req->hash != this->blk->getHash()) return;
 
+        // Erase the latest timeout event
         if(cur_node->sent_get_requests.contains(this->hash)){
             events.erase(cur_node->sent_get_requests[this->hash].second);
             delete cur_node->sent_get_requests[this->hash].second;
@@ -321,7 +322,7 @@ void Event::process_event(){
             if(cur_node->is_malicious){
                 Malicious_Node* m = (Malicious_Node*)cur_node;
                 if(m->private_chain_leaf->depth < m->longest_chain_leaf->depth){
-                    // cerr << "resetting" << endl;
+                    // resetting the attack
                     m->private_chain_leaf = m->longest_chain_leaf;
                     m->private_balances = m->balances;
                     m->private_chain = vector<Block*>();
@@ -335,6 +336,7 @@ void Event::process_event(){
                     }
                 }
                 if(cur_node->node_id == ringmaster->node_id){
+                    // Enabling the attack
                     Malicious_Node* m = (Malicious_Node*)cur_node;
                     Block* temp = m->longest_chain_leaf;
                     if((m->private_chain.size()>0 && m->private_chain_leaf->depth == temp->depth) || (m->private_chain_leaf->depth == 1+temp->depth && m->private_chain_leaf->prev_blk_id!=temp->blk_id)){
