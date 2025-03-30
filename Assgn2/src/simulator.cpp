@@ -3,7 +3,7 @@
 int num_peers;
 double slow_percent;
 double malicious_node_percent;
-double timeout;
+double timeout;                         // microseconds
 long double transaction_mean_time;      // microseconds
 long double block_mean_time;            // microseconds
 long double current_time;               // microseconds
@@ -22,7 +22,7 @@ Block* genesis_block = new Block();
 
 auto seed = rd();
 // auto seed = 1461198227;
-// auto seed = 3342750228;      // seg fault
+// auto seed = 3342750228;      
 mt19937 gen(seed);
 
 long int draw_from_uniform(long int low,long int high){

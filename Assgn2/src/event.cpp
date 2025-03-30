@@ -169,6 +169,7 @@ void Event::process_event(){
             forward_get_req(cur_node,this->hash,get_req);
         }
     }
+    // What to do when a node gets a "get" request 
     else if(this->event_type == "rec_get_req"){
         Node* cur_node = nodes[this->receiver];
         if(this->sent_on_overlay && !cur_node->is_malicious){cerr << "Mishap happened" << endl;exit(1);}
@@ -217,6 +218,7 @@ void Event::process_event(){
         
         if(this->sent_on_overlay && !cur_node->is_malicious){cerr << "Mishap happened" << endl;exit(1);}
         
+        // informing my neighbours about the attack
         cur_node->forward_broad_pvt_chain_msg(this->sender);
         unordered_set<int>* neigh = get_neighbours(cur_node,false);
         for(int j:*neigh){
@@ -245,6 +247,7 @@ void Event::process_event(){
         // If block already there in the tree of receiver (of this event) then do nothing.
         if(cur_node->blk_id_to_pointer.contains(this->blk->blk_id)) return; 
 
+        // If this is a private block sent on overlay network then only send hash to malicious neighbours
         if(this->sent_on_overlay && nodes[this->blk->miner]->node_id==ringmaster->node_id){
             Malicious_Node* current_node = (Malicious_Node*)cur_node;
             Block*b = this->blk;
