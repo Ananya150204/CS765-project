@@ -216,5 +216,5 @@ void Node:: print_stats(ofstream& outFile){
         chain+= (this->blk_id_to_pointer[curr_id]->miner == this->node_id);
         curr_id = this->blk_id_to_pointer[curr_id]->prev_blk_id;
     }
-    outFile << this->node_id << "," << chain << "," << this->total_blocks << "," << this->is_slow << "," << this->hash_power<< endl;
+    outFile << this->node_id << "," << chain << "," << this->total_blocks << "," << this->is_slow << "," << this->hash_power<< "," << this->longest_chain_leaf->depth << endl;
 }

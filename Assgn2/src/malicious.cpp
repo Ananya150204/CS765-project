@@ -34,7 +34,7 @@ bool Malicious_Node::check_private_block(Block*b){
             this->private_balances[i+1] = delta[i+1];
         }
     }
-    else {cerr << "private block forked" << endl;}
+    else {cerr << "private block forked" << endl;exit(1);}
     return true;
 }
 
