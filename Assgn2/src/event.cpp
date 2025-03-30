@@ -286,9 +286,7 @@ void Event::process_event(){
                 Block*b = it->first;
                 long double t = it->second;
                 if(current_node->blk_id_to_pointer.contains(b->prev_blk_id)){
-                    if(current_node->check_private_block(b)){
-                        current_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << "," << b->block_size/TXN_SIZE << "," << nodes[b->miner]->is_malicious << endl;
-                    }
+                    current_node->outFile << b->blk_id << "," << b->prev_blk_id << "," << t << "," << current_time << "," << b->block_size/TXN_SIZE << "," << nodes[b->miner]->is_malicious << endl;
                     it = current_node->private_orphaned_blocks.erase(it);
                 }
                 else it++;

@@ -212,9 +212,17 @@ bool Node:: check_balance_validity(Block*b){
 void Node:: print_stats(ofstream& outFile){
     long int chain = 0;
     long int curr_id = this->longest_chain_leaf->blk_id;
+    if(this->is_malicious && ((Malicious_Node*)this)->private_chain_leaf->depth > this->longest_chain_leaf->depth){
+        curr_id = ((Malicious_Node*)this)->private_chain_leaf->blk_id;
+    }
     while(curr_id!=1){
         chain+= (this->blk_id_to_pointer[curr_id]->miner == this->node_id);
         curr_id = this->blk_id_to_pointer[curr_id]->prev_blk_id;
     }
-    outFile << this->node_id << "," << chain << "," << this->total_blocks << "," << this->is_slow << "," << this->hash_power<< "," << this->longest_chain_leaf->depth << endl;
+    long int max_depth = this->longest_chain_leaf->depth;
+    if(this->is_malicious && ((Malicious_Node*)this)->private_chain_leaf->depth > this->longest_chain_leaf->depth){
+        max_depth = ((Malicious_Node*)this)->private_chain_leaf->depth;
+    }
+
+    outFile << this->node_id << "," << chain << "," << this->total_blocks << "," << this->is_slow << "," << this->hash_power<< "," << max_depth << endl;
 }
