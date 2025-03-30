@@ -102,6 +102,7 @@ class Malicious_Node:public Node{
     Malicious_Node(long int node_id, bool is_slow,bool is_malicious);
     bool check_private_block(Block*);
     void forward_broad_pvt_chain_msg(int event_sender=-1);
+    void forward_stop_atk(int event_sender = -1);
 };
 
 class Block{

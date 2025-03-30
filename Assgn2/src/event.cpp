@@ -137,6 +137,7 @@ void Event::process_event(){
                 current_node->private_chain_leaf = b;
                 current_node->remove_txns_from_mempool(b);
             }
+
             cur_node->hash_to_block[this->blk->getHash()] = this->blk;
             forward_hash(nodes[this->sender],this->blk,this->sender,true);
         }
@@ -176,7 +177,7 @@ void Event::process_event(){
         
         bool sent_on_overlay = this->sent_on_overlay;
         bool is_ring_block = cur_node->hash_to_block[this->hash]->miner == ringmaster->node_id;
-        if(cur_node->is_malicious && !no_eclipse_attack && !sent_on_overlay && !is_ring_block) return;
+        if(cur_node->is_malicious && !no_eclipse_attack && !nodes[this->sender]->is_malicious && !is_ring_block) return;
 
         if(cur_node->hash_to_block.contains(this->hash)){
             Block* b = cur_node->hash_to_block[this->hash];
@@ -222,11 +223,21 @@ void Event::process_event(){
         cur_node->forward_broad_pvt_chain_msg(this->sender);
         unordered_set<int>* neigh = get_neighbours(cur_node,false);
         for(int j:*neigh){
+            if(nodes[j]->is_malicious) continue;
             for(Block*b:cur_node->private_chain){
                 forward_hash(cur_node,b,j);
             }
         }
         cur_node->private_chain = vector<Block*>();   
+    }
+    else if(this->event_type == "stop_atk"){
+        Malicious_Node* m = (Malicious_Node*)(nodes[this->receiver]);
+        if(!m->attack_enabled) return;
+        m->attack_enabled = false;
+        m->forward_stop_atk(this->sender);
+        m->private_chain_leaf = m->longest_chain_leaf;
+        m->private_balances = m->balances;
+        m->private_chain = vector<Block*>();
     }
     else if(this->event_type == "rec_block"){
         Node* cur_node = nodes[this->receiver];
@@ -258,7 +269,7 @@ void Event::process_event(){
                 return;
             }
             Block* prev_block = cur_node->blk_id_to_pointer[b->prev_blk_id];
-            if(!current_node->check_private_block(b)) {cerr << "private invalid" << endl;return;}
+            
             current_node->blk_id_to_pointer[b->blk_id] = b;
             current_node->blockchain_tree[b->prev_blk_id].insert(b->blk_id);
             current_node->private_chain.push_back(b);
@@ -322,7 +333,7 @@ void Event::process_event(){
             forward_hash(cur_node,b,this->sender,this->sent_on_overlay);
             if(cur_node->is_malicious && !this->sent_on_overlay) forward_hash(cur_node,b,this->sender,true);
 
-            if(cur_node->is_malicious){
+            if(cur_node->node_id == ringmaster->node_id){
                 Malicious_Node* m = (Malicious_Node*)cur_node;
                 if(m->private_chain_leaf->depth < m->longest_chain_leaf->depth){
                     // resetting the attack
@@ -330,6 +341,7 @@ void Event::process_event(){
                     m->private_balances = m->balances;
                     m->private_chain = vector<Block*>();
                     m->attack_enabled = false;
+                    m->forward_stop_atk();
                     if(m->latest_mining_event){
                         auto iter = events.find(m->latest_mining_event);
                         if(iter!=events.end() && *iter==m->latest_mining_event) events.erase(iter);
@@ -338,14 +350,12 @@ void Event::process_event(){
                         events.insert(m->generate_block_event(cancel_hone_wala_id));
                     }
                 }
-                if(cur_node->node_id == ringmaster->node_id){
-                    // Enabling the attack
-                    Malicious_Node* m = (Malicious_Node*)cur_node;
-                    Block* temp = m->longest_chain_leaf;
-                    if((m->private_chain.size()>0 && m->private_chain_leaf->depth == temp->depth) || (m->private_chain_leaf->depth == 1+temp->depth && m->private_chain_leaf->prev_blk_id!=temp->blk_id)){
-                        cerr << "ATTACK!" << endl;
-                        m->forward_broad_pvt_chain_msg();
-                    }
+                // Enabling the attack
+                Block* temp = m->longest_chain_leaf;
+                if((m->private_chain.size()>0 && m->private_chain_leaf->depth == temp->depth) || (m->private_chain_leaf->depth == 1+temp->depth && m->private_chain_leaf->prev_blk_id!=temp->blk_id)){
+                    cerr << "ATTACK!" << endl;
+                    m->attack_enabled = true;
+                    m->forward_broad_pvt_chain_msg();
                 }
             }
         }

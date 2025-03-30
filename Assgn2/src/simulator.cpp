@@ -23,6 +23,7 @@ Block* genesis_block = new Block();
 auto seed = rd();
 // auto seed = 1461198227;
 // auto seed = 3342750228;      
+// auto seed = 1474552598;
 mt19937 gen(seed);
 
 long int draw_from_uniform(long int low,long int high){
@@ -230,6 +231,7 @@ void run_events(){
         auto it = events.begin();
         Event* e = *it;
         current_time = e->timestamp;
+        // cerr << e->timestamp << endl;
         
         e->process_event();
         
