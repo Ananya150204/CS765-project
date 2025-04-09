@@ -85,7 +85,7 @@ contract DEX {
         reserveB -= amt_B;
     }
 
-    function swap_B_to_A(uint amt) public {
+    function swap_B_to_A(uint256 amt) public {
         require(tokenB.balanceOf(msg.sender) >= amt, "Insufficient token B balance");
 
         uint256 eff_B = (997*amt)/1000;        
