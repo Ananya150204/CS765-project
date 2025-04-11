@@ -4,7 +4,7 @@ async function simulateDEX() {
     // Get all accounts from Remix
     const accounts = await web3.eth.getAccounts();
     const owner = accounts[0];
-    const LPs = [owner, ...accounts.slice(1, 5)]; // owner + 5 LPs
+    const LPs = [owner, ...accounts.slice(1, 5)]; // owner + 4 LPs
     const traders = accounts.slice(5, 13);  // 8 traders
     const initialBalances = {}; // user => { amountA: BigInt, amountB: BigInt }
     const spotPrices = []; // To store 61 spot prices
@@ -210,7 +210,7 @@ async function simulateDEX() {
             let earnedA = final.amountA - initial.amountA;
             let earnedB = final.amountB - initial.amountB;
 
-            // since owner initially minted money to all therefore he will be showing -24000
+            // since owner initially minted money to all therefore he will be showing -26000
             // so just ignoring that 
             if (user === owner){
                 earnedA += BigInt(24e21);
