@@ -16,6 +16,8 @@ contract DEX {
 
     uint256 internal reserveA;
     uint256 internal reserveB;
+    uint256 internal feeA;
+    uint256 internal feeB;
 
     uint256 internal constant SCALE = 1e18;
 
@@ -26,6 +28,8 @@ contract DEX {
         lpToken = new LPToken(address(this));
         reserveA = 0;           // reserve stores in terms of mini-tokens
         reserveB = 0;
+        feeA = 0;
+        feeB = 0;
     }
 
     // liquidity gets added in terms of mini-tokens, also lp tokens are minted and transferred in mini-tokens
@@ -43,8 +47,10 @@ contract DEX {
             lpToken.mint(msg.sender, lpAmount);
         } else {
             // Maintain ratio: amountA / amountB = reserveA / reserveB
+            uint256 a = (reserveA * SCALE) / reserveB;
+            uint256 b = (amountA * SCALE) / amountB;
             require(
-                reserveA * amountB == reserveB * amountA,
+                a > b ? (a-b < 1) : (b-a < 1),
                 "Invalid deposit ratio"
             );
 
@@ -67,7 +73,13 @@ contract DEX {
         require(lpToken.balanceOf(msg.sender) >= lpAmount, "Insufficient LP balance");
 
         uint256 amountA = (lpAmount * reserveA) / totalSupply;
+        uint256 temp = (lpAmount * feeA) / totalSupply;
+        amountA += temp;
+        feeA -= temp;
         uint256 amountB = (lpAmount * reserveB) / totalSupply;
+        temp = (lpAmount * feeB) / totalSupply;
+        amountA += temp;
+        feeA -= temp;
 
         lpToken.burn(msg.sender, lpAmount);
 
@@ -81,7 +93,8 @@ contract DEX {
     function swap_A_to_B(uint256 amt) public returns (uint256){
         require(tokenA.balanceOf(msg.sender) >= amt, "Insufficient token A balance");
 
-        uint256 eff_A = (997*amt)/1000;        
+        uint256 eff_A = (997*amt)/1000;
+        feeA = feeA + amt - eff_A;        
         uint256 amt_B = (eff_A * reserveB) / (reserveA + eff_A);
         require(tokenB.balanceOf(address(this)) >= amt_B, "Insufficient token B reserves");
 
@@ -98,7 +111,8 @@ contract DEX {
     function swap_B_to_A(uint256 amt) public returns (uint256){
         require(tokenB.balanceOf(msg.sender) >= amt, "Insufficient token B balance");
 
-        uint256 eff_B = (997*amt)/1000;        
+        uint256 eff_B = (997*amt)/1000;  
+        feeB = feeB + amt - eff_B;      
         uint256 amt_A = (eff_B * reserveA) / (reserveB + eff_B);
         require(tokenA.balanceOf(address(this)) >= amt_A, "Insufficient token A reserves");
 
