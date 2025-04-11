@@ -12,8 +12,8 @@ interface IDex {
     function spotPrice() external view returns (uint256);
     function get_reserveA() external view returns(uint256);
     function get_reserveB() external view returns(uint256);
-    function swap_A_to_B(uint256 amt) external returns (uint256);
-    function swap_B_to_A(uint256 amt) external returns (uint256);
+    function swap_A_to_B(uint256 amt) external;
+    function swap_B_to_A(uint256 amt) external;
     function get_tokenA() external view returns (IERC20);
     function get_tokenB() external view returns (IERC20);
 }
@@ -69,16 +69,20 @@ contract Arbitrage {
 
         if(price_A_2 > amountIn + minProfit){
             tokenA.approve(address(dex1),amountIn);
-            uint256 temp = dex1.swap_A_to_B(amountIn);
+            dex1.swap_A_to_B(amountIn);
+            uint256 temp = tokenB.balanceOf(address(this));
             tokenB.approve(address(dex2),temp);
-            temp = dex2.swap_B_to_A(temp);   
+            dex2.swap_B_to_A(temp);   
+            temp = tokenA.balanceOf(address(this));
             tokenA.transfer(owner, temp); // Send back capital + profit
         }
         else if(price_A_1 > amountIn + minProfit){
             tokenA.approve(address(dex2),amountIn);
-            uint256 temp = dex2.swap_A_to_B(amountIn);
+            dex2.swap_A_to_B(amountIn);
+            uint256 temp = tokenB.balanceOf(address(this));
             tokenB.approve(address(dex1),temp);
-            temp = dex1.swap_B_to_A(temp);   
+            dex1.swap_B_to_A(temp);
+            temp = tokenA.balanceOf(address(this));   
             tokenA.transfer(owner, temp); // Send back capital + profit
         }
         else{
@@ -108,16 +112,20 @@ contract Arbitrage {
 
         if(price_B_2 > amountIn + minProfit){
             tokenB.approve(address(dex1),amountIn);
-            uint256 temp = dex1.swap_B_to_A(amountIn);
+            dex1.swap_B_to_A(amountIn);
+            uint256 temp = tokenA.balanceOf(address(this));
             tokenA.approve(address(dex2),temp);
-            temp = dex2.swap_A_to_B(temp);   
+            dex2.swap_A_to_B(temp);   
+            temp = tokenB.balanceOf(address(this));
             tokenB.transfer(owner, temp); // Send back capital + profit
         }
         else if(price_B_1 > amountIn + minProfit){
             tokenB.approve(address(dex2),amountIn);
-            uint256 temp = dex2.swap_B_to_A(amountIn);
+            dex2.swap_B_to_A(amountIn);
+            uint256 temp = tokenA.balanceOf(address(this));
             tokenA.approve(address(dex1),temp);
-            temp = dex1.swap_A_to_B(temp);   
+            dex1.swap_A_to_B(temp);   
+            temp = tokenB.balanceOf(address(this));
             tokenB.transfer(owner, temp); // Send back capital + profit
         }
         else{
