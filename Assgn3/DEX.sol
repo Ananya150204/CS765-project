@@ -10,21 +10,21 @@ import "contracts/Token.sol";
 // every transaction occurs in terms of mini-tokens, so all the balances outputted are original and in units of mini tokens
 // only the reserve ratio is scaled
 contract DEX {
-    IERC20 internal tokenA;
-    IERC20 internal tokenB;
-    LPToken internal lpToken;
+    IERC20 private tokenA;
+    IERC20 private tokenB;
+    LPToken private lpToken;
 
-    uint256 internal reserveA;
-    uint256 internal reserveB;
-    uint256 internal feeA;
-    uint256 internal feeB;
-    uint256 internal tot_feeA;
-    uint256 internal tot_feeB;
-    uint256 internal swap_A;
-    uint256 internal swap_B;
-    address internal owner;
+    uint256 private reserveA;               // reserves of A at any point
+    uint256 private reserveB;               // reserves of B at any point
+    uint256 private feeA;                   // Till a point, how much fees in A has been collected 
+    uint256 private feeB;                   // Till a point, how much fees in B has been collected 
+    uint256 private tot_feeA;               // How much fees overall was collected in A
+    uint256 private tot_feeB;               // How much fees overall was collected in B
+    uint256 private swap_A;                 // How much amount of A is swapped till a point
+    uint256 private swap_B;                 // How much amount of B is swapped till a point
+    address private owner;
 
-    uint256 internal constant SCALE = 1e18;
+    uint256 private constant SCALE = 1e18;
 
     constructor(address _tokA, address _tokB) {
         tokenA = IERC20(_tokA);
@@ -43,7 +43,7 @@ contract DEX {
     }
 
     // liquidity gets added in terms of mini-tokens, also lp tokens are minted and transferred in mini-tokens
-    function addLiquidity(uint256 amountA, uint256 amountB) public {
+    function addLiquidity(uint256 amountA, uint256 amountB) external  {
         require(amountA > 0 && amountB > 0, "Zero amounts");
         require(tokenA.balanceOf(msg.sender) >= amountA, "Insufficient token A balance");
         require(tokenB.balanceOf(msg.sender) >= amountB, "Insufficient token B balance");
@@ -54,8 +54,8 @@ contract DEX {
 
         if (reserveA == 0 && reserveB == 0) {
             // First LP sets the ratio
-            tokenA.transferFrom(msg.sender, address(this), amountA);
-            tokenB.transferFrom(msg.sender, address(this), amountB);
+            require(tokenA.transferFrom(msg.sender, address(this), amountA),"Approve the liquidity of A");
+            require(tokenB.transferFrom(msg.sender, address(this), amountB),"Approve the liquidity of B");
 
             uint256 lpAmount = SCALE;
             lpToken.mint(msg.sender, lpAmount);
@@ -70,17 +70,17 @@ contract DEX {
 
             uint256 totalSupply = lpToken.totalSupply();
             uint256 lpAmount = (totalSupply * amountA) / reserveA;
-            lpToken.mint(msg.sender, lpAmount);
-
             require(tokenA.transferFrom(msg.sender, address(this), amountA),"Approve the liquidity of A");
             require(tokenB.transferFrom(msg.sender, address(this), amountB),"Approve the liquidity of B");
+
+            lpToken.mint(msg.sender, lpAmount);
         }
 
         reserveA += amountA;
         reserveB += amountB;
     }
 
-    function removeLiquidity(uint256 lpAmount) public  {
+    function removeLiquidity(uint256 lpAmount) external  {
         require(lpAmount > 0, "Zero amount");
         uint256 totalSupply = lpToken.totalSupply();
         require(totalSupply > 0, "No LP tokens");
@@ -105,70 +105,67 @@ contract DEX {
         tokenB.transfer(msg.sender, amountB);
     }
 
-    function swap_A_to_B(uint256 amt) public{
+    function swap_A_to_B(uint256 amt) external{
         require(tokenA.balanceOf(msg.sender) >= amt, "Insufficient token A balance");
-        swap_A += amt;
-
         uint256 eff_A = (997*amt)/1000;
-        feeA = feeA + amt - eff_A;
-        tot_feeA = tot_feeA + amt - eff_A;        
         uint256 amt_B = (eff_A * reserveB) / (reserveA + eff_A);
         require(tokenB.balanceOf(address(this)) >= amt_B, "Insufficient token B reserves");
 
         require(tokenA.transferFrom(msg.sender, address(this), amt),"Approve the swap from A");
         tokenB.transfer(msg.sender, amt_B);
 
+        swap_A += amt;
+        feeA = feeA + amt - eff_A;
+        tot_feeA = tot_feeA + amt - eff_A;        
         reserveA += eff_A;
         reserveB -= amt_B;
     }
 
-    // return so that we know how much money actually got transferred so that arbitrageur can use it
-    function swap_B_to_A(uint256 amt) public{
+    function swap_B_to_A(uint256 amt) external{
         require(tokenB.balanceOf(msg.sender) >= amt, "Insufficient token B balance");
-        swap_B += amt;
-
         uint256 eff_B = (997*amt)/1000;  
-        feeB = feeB + amt - eff_B;   
-        tot_feeB = tot_feeB + amt - eff_B;   
         uint256 amt_A = (eff_B * reserveA) / (reserveB + eff_B);
         require(tokenA.balanceOf(address(this)) >= amt_A, "Insufficient token A reserves");
 
         require(tokenB.transferFrom(msg.sender, address(this), amt),"Approve the swap from B");
         tokenA.transfer(msg.sender, amt_A);
 
+        swap_B += amt;
+        feeB = feeB + amt - eff_B;   
+        tot_feeB = tot_feeB + amt - eff_B;   
         reserveA -= amt_A;
         reserveB += eff_B;
     }
 
-    function get_B_to_A(uint256 amt_B) public view returns (uint256){
+    function get_B_to_A(uint256 amt_B) external view returns (uint256){
         return (reserveA * amt_B)/reserveB;
     }
 
-    function get_A_to_B(uint256 amt_A) public view returns (uint256){
+    function get_A_to_B(uint256 amt_A) external view returns (uint256){
         return (reserveB * amt_A)/reserveA;
     }
 
-    function spotPrice() public view returns (uint256){
+    function spotPrice() external view returns (uint256){
         return (reserveA * SCALE)/reserveB;
     }
 
-    function get_reserveA() public view returns (uint256){
+    function get_reserveA() external view returns (uint256){
         return reserveA;
     } 
 
-    function get_reserveB() public view returns (uint256){
+    function get_reserveB() external view returns (uint256){
         return reserveB;
     } 
 
-    function get_lp_tokens(address t) public view returns (uint256){
+    function get_lp_tokens(address t) external view returns (uint256){
         return lpToken.balanceOf(t);
     }
 
-    function get_tokenA() public view returns (IERC20){
+    function get_tokenA() external view returns (IERC20){
         return tokenA;
     }
 
-    function get_tokenB() public view returns (IERC20){
+    function get_tokenB() external view returns (IERC20){
         return tokenB;
     }
 
