@@ -210,11 +210,11 @@ async function simulateDEX() {
             let earnedA = final.amountA - initial.amountA;
             let earnedB = final.amountB - initial.amountB;
 
-            // since owner initially minted money to all therefore he will be showing -26000
+            // since owner initially minted money to all therefore he will be showing -24000
             // so just ignoring that 
             if (user === owner){
-                earnedA += BigInt(26e21);
-                earnedB += BigInt(26e21);
+                earnedA += BigInt(24e21);
+                earnedB += BigInt(24e21);
             }
 
             console.log(`\u{1F464} LP ${user}`);
