@@ -18,6 +18,11 @@ contract DEX {
     uint256 internal reserveB;
     uint256 internal feeA;
     uint256 internal feeB;
+    uint256 internal tot_feeA;
+    uint256 internal tot_feeB;
+    uint256 internal swap_A;
+    uint256 internal swap_B;
+    address internal owner;
 
     uint256 internal constant SCALE = 1e18;
 
@@ -30,6 +35,11 @@ contract DEX {
         reserveB = 0;
         feeA = 0;
         feeB = 0;
+        tot_feeA = 0;
+        tot_feeB = 0;
+        swap_A = 0;
+        swap_B = 0;
+        owner = address(0);
     }
 
     // liquidity gets added in terms of mini-tokens, also lp tokens are minted and transferred in mini-tokens
@@ -37,6 +47,10 @@ contract DEX {
         require(amountA > 0 && amountB > 0, "Zero amounts");
         require(tokenA.balanceOf(msg.sender) >= amountA, "Insufficient token A balance");
         require(tokenB.balanceOf(msg.sender) >= amountB, "Insufficient token B balance");
+        if(owner == address(0)) {
+            owner = msg.sender;
+            lpToken.mint(owner, SCALE);     // giving 1 LP token to owner initially
+        }
 
         if (reserveA == 0 && reserveB == 0) {
             // First LP sets the ratio
@@ -73,28 +87,31 @@ contract DEX {
         require(lpToken.balanceOf(msg.sender) >= lpAmount, "Insufficient LP balance");
 
         uint256 amountA = (lpAmount * reserveA) / totalSupply;
+        uint256 amountB = (lpAmount * reserveB) / totalSupply;
+
+        reserveA -= amountA;
+        reserveB -= amountB;
+
         uint256 temp = (lpAmount * feeA) / totalSupply;
         amountA += temp;
         feeA -= temp;
-        uint256 amountB = (lpAmount * reserveB) / totalSupply;
         temp = (lpAmount * feeB) / totalSupply;
-        amountA += temp;
-        feeA -= temp;
+        amountB += temp;
+        feeB -= temp;
 
         lpToken.burn(msg.sender, lpAmount);
 
         tokenA.transfer(msg.sender, amountA);
         tokenB.transfer(msg.sender, amountB);
-
-        reserveA -= amountA;
-        reserveB -= amountB;
     }
 
-    function swap_A_to_B(uint256 amt) public returns (uint256){
+    function swap_A_to_B(uint256 amt) public{
         require(tokenA.balanceOf(msg.sender) >= amt, "Insufficient token A balance");
+        swap_A += amt;
 
         uint256 eff_A = (997*amt)/1000;
-        feeA = feeA + amt - eff_A;        
+        feeA = feeA + amt - eff_A;
+        tot_feeA = tot_feeA + amt - eff_A;        
         uint256 amt_B = (eff_A * reserveB) / (reserveA + eff_A);
         require(tokenB.balanceOf(address(this)) >= amt_B, "Insufficient token B reserves");
 
@@ -103,16 +120,16 @@ contract DEX {
 
         reserveA += eff_A;
         reserveB -= amt_B;
-
-        return amt_B;
     }
 
     // return so that we know how much money actually got transferred so that arbitrageur can use it
-    function swap_B_to_A(uint256 amt) public returns (uint256){
+    function swap_B_to_A(uint256 amt) public{
         require(tokenB.balanceOf(msg.sender) >= amt, "Insufficient token B balance");
+        swap_B += amt;
 
         uint256 eff_B = (997*amt)/1000;  
-        feeB = feeB + amt - eff_B;      
+        feeB = feeB + amt - eff_B;   
+        tot_feeB = tot_feeB + amt - eff_B;   
         uint256 amt_A = (eff_B * reserveA) / (reserveB + eff_B);
         require(tokenA.balanceOf(address(this)) >= amt_A, "Insufficient token A reserves");
 
@@ -121,8 +138,6 @@ contract DEX {
 
         reserveA -= amt_A;
         reserveB += eff_B;
-
-        return amt_A;
     }
 
     function get_B_to_A(uint256 amt_B) public view returns (uint256){
@@ -155,6 +170,26 @@ contract DEX {
 
     function get_tokenB() public view returns (IERC20){
         return tokenB;
+    }
+
+    function get_tot_feeA() external view returns (uint256){
+        require(msg.sender == owner, "Only owner can view the fees of A");
+        return tot_feeA;
+    }
+
+    function get_tot_feeB() external view returns (uint256){
+        require(msg.sender == owner, "Only owner can view the fees of B");
+        return tot_feeB;
+    }
+
+    function get_swapA() external view returns (uint256){
+        require(msg.sender == owner, "Only owner can view the total swapped tokens of A");   
+        return swap_A;
+    }
+
+    function get_swapB() external view returns (uint256){
+        require(msg.sender == owner, "Only owner can view the total swapped tokens of B");   
+        return swap_B;
     }
 }
 
