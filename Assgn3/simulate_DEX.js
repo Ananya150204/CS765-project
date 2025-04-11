@@ -11,6 +11,7 @@ async function simulateDEX() {
     const total_reservesA = [];     //61 vals
     const total_reservesB = [];     // 61 vals
     const slippages = []; // To store <=60 slippage values (only for swaps)
+    const trade_lot_fractions = [];
     const lpTokenBalances = {}; // user => [array of lp token balances]
 
     const N = 60; // Number of transactions to simulate
@@ -24,9 +25,9 @@ async function simulateDEX() {
     const dexABI = dexMetadata.abi;
 
     // ---------------------- Deployed Contract Addresses -------------------------
-    const tokenAAddress = "0x6C501044F1c03e4aa09F75b479711DE7b93DB377";
-    const tokenBAddress = "0xB79E74450990F999BC82A2B3F148C2DFC6B151BA";
-    const dexAddress = "0xE3e408fd26DbCF3C5c4A81d9715Da6eCF0F12823";
+    const tokenAAddress = "0x7b04dfcedf0bF53E1add435250006cD9D6AEc1DF";
+    const tokenBAddress = "0x70f5EF0d8Eaf45F58aC360f997f2028Eb47B726d";
+    const dexAddress = "0x52FcFBaD70c5Cf2D2183Dbc63a646710141F77eE";
 
     const tokenA = new web3.eth.Contract(tokenABI, tokenAAddress);
     const tokenB = new web3.eth.Contract(tokenABI, tokenBAddress);
@@ -121,14 +122,16 @@ async function simulateDEX() {
                 const tokenChoice = Math.random() < 0.5 ? 'A' : 'B';
                 const reserveA = BigInt(await dex.methods.get_reserveA().call());
                 const reserveB = BigInt(await dex.methods.get_reserveB().call());
-                let slip,token1,token2,ratio;
+                let slip,token1,token2,ratio,tlf;
 
                 if (tokenChoice === 'A') {
                     const balance = BigInt(await tokenA.methods.balanceOf(user).call());
-                    const amount = balance < reserveA ? balance / 10n : reserveA / 10n;
+                    const max_amount = balance < reserveA ? balance / 10n : reserveA / 10n;
+                    const amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
                     token1 = Number(amount);
                     ratio = Number(reserveB) / Number(reserveA);
                     let ini = BigInt(await tokenB.methods.balanceOf(user).call());
+                    tlf = Number(amount)/Number(reserveA);
 
                     if (amount > 0n) {
                         await tokenA.methods.approve(dexAddress, amount.toString()).send({ from: user });
@@ -139,10 +142,12 @@ async function simulateDEX() {
                     token2 = Number(fini - ini);
                 } else {
                     const balance = BigInt(await tokenB.methods.balanceOf(user).call());
-                    const amount = balance < reserveB ? balance / 10n : reserveB / 10n;
+                    const max_amount = balance < reserveB ? balance / 10n : reserveB / 10n;
+                    const amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
                     token1 = Number(amount);
                     ratio = Number(reserveA)/Number(reserveB);
                     let ini = BigInt(await tokenA.methods.balanceOf(user).call());
+                    tlf = Number(amount)/Number(reserveB);
 
                     if (amount > 0n) {
                         await tokenB.methods.approve(dexAddress, amount.toString()).send({ from: user });
@@ -155,6 +160,8 @@ async function simulateDEX() {
 
                 slip = (token2/token1  -  ratio)*100/ratio;
                 slippages.push(slip);
+
+                trade_lot_fractions.push(tlf);
             }
 
             sp = await dex.methods.spotPrice().call();
@@ -203,8 +210,8 @@ async function simulateDEX() {
 
             if (!initial || !final) continue;
 
-            const earnedA = final.amountA - initial.amountA;
-            const earnedB = final.amountB - initial.amountB;
+            let earnedA = final.amountA - initial.amountA;
+            let earnedB = final.amountB - initial.amountB;
 
             // since owner initially minted money to all therefore he will be showing -26000
             // so just ignoring that 
@@ -240,6 +247,10 @@ async function simulateDEX() {
     const slippagesText = slippages.join('\n');
     await remix.call('fileManager', 'writeFile', 'browser/slippages.txt', slippagesText);
     console.log("📄 Spot prices written to browser/slippages.txt");
+
+    const trade_lot_fractionsText = trade_lot_fractions.join('\n');
+    await remix.call('fileManager', 'writeFile', 'browser/trade_lot_fractions.txt', trade_lot_fractionsText);
+    console.log("📄 Spot prices written to browser/trade_lot_fractions.txt");
 
     let lpTokenBalanceText = "";
     for (const lp of LPs) {
