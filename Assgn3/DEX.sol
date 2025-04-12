@@ -84,12 +84,12 @@ contract DEX {
         reserveA -= amountA;
         reserveB -= amountB;
 
-        uint256 temp = (lpAmount * feeA) / totalSupply;
-        amountA += temp;
-        feeA -= temp;
-        temp = (lpAmount * feeB) / totalSupply;
-        amountB += temp;
-        feeB -= temp;
+        uint256 share_of_LP = (lpAmount * feeA) / totalSupply;
+        amountA += share_of_LP;
+        feeA -= share_of_LP;
+        share_of_LP = (lpAmount * feeB) / totalSupply;
+        amountB += share_of_LP;
+        feeB -= share_of_LP;
 
         lpToken.burn(msg.sender, lpAmount);
 
