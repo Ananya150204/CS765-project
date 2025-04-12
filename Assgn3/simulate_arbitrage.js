@@ -18,12 +18,12 @@ async function simulateArbitrage() {
     // --------- Deploy Tokens ------------
     const tokenA = await new web3.eth.Contract(tokenABI).deploy({
         data: tokenMetadata.data.bytecode.object,
-        arguments: [(BigInt(1000000) * SCALE).toString()]
+        arguments: [(BigInt(100000) * SCALE).toString()]
     }).send({ from: arbitrageur, gas: 60000000 });
 
     const tokenB = await new web3.eth.Contract(tokenABI).deploy({
         data: tokenMetadata.data.bytecode.object,
-        arguments: [(BigInt(1000000) * SCALE).toString()]
+        arguments: [(BigInt(100000) * SCALE).toString()]
     }).send({ from: arbitrageur, gas: 60000000 });
 
     // --------- Deploy 2 DEXes ------------
@@ -59,12 +59,9 @@ async function simulateArbitrage() {
 
     const arbAddress = arbitrage.options.address;
 
-    // --------- Fund arbitrage contract ------------
-    await tokenA.methods.approve(arbAddress, (10n * SCALE).toString()).send({ from: arbitrageur });
-    console.log("\u{1F4E5} Approved 10 TokenA to Arbitrage Contract");
 
-    // --------- Scenario 1: Profitable Arbitrage using TokenA ------------
-    console.log("\n\u{1F501} Trying Profitable Arbitrage: TokenA as Input");
+    // ----------------- Scenario 1: Profitable Arbitrage -----------------------
+    console.log("\n\u{1F501} Trying Profitable Arbitrage: ");
 
     // Print reserves before arbitrage
     let resA1 = await dex1.methods.get_reserveA().call();
@@ -75,25 +72,34 @@ async function simulateArbitrage() {
     console.log(`\u{1F4CA} DEX1 Reserves - TokenA: ${resA1}, TokenB: ${resB1}`);
     console.log(`\u{1F4CA} DEX2 Reserves - TokenA: ${resA2}, TokenB: ${resB2}`);
 
-    const initialBalanceA = BigInt(await tokenA.methods.balanceOf(arbitrageur).call());
+    let initialBalanceA = BigInt(await tokenA.methods.balanceOf(arbitrageur).call());
+    let initialBalanceB = BigInt(await tokenB.methods.balanceOf(arbitrageur).call());
+
+    await tokenA.methods.approve(arbAddress, (initialBalanceA / 10n).toString()).send({ from: arbitrageur });
+    console.log(`\u{1F4E5} Approved ${initialBalanceA / 10n} TokenA to Arbitrage Contract`);
+    await tokenB.methods.approve(arbAddress, (initialBalanceB / 10n).toString()).send({ from: arbitrageur });
+    console.log(`\u{1F4E5} Approved ${initialBalanceB / 10n} TokenB to Arbitrage Contract`);
 
     try{
-        await arbitrage.methods.performArbitrage_A(
+        await arbitrage.methods.perform_arbitrage(
             (10n * SCALE).toString(),
-            (3n * SCALE)
-        ).send({ from: arbitrageur });
-    }catch(err){
-        console.error(`Error in performArbitrage_A ${err.message}`);
+            (initialBalanceB / 10n).toString(),
+            (3n * SCALE).toString()
+        ).send({ from: arbitrageur, gas:70000000 });
+    } catch(err){
+        console.error(`Error in perform_arbitrage ${err.message}, ${initialBalanceA/10n}, ${initialBalanceB/10n}`);
     }
 
-    const finalBalanceA = BigInt(await tokenA.methods.balanceOf(arbitrageur).call());
-    const profitA = finalBalanceA - initialBalanceA;
+    let finalBalanceA = BigInt(await tokenA.methods.balanceOf(arbitrageur).call());
+    let finalBalanceB = BigInt(await tokenB.methods.balanceOf(arbitrageur).call());
+    let profitA = finalBalanceA - initialBalanceA;
+    let profitB = finalBalanceB - initialBalanceB;
 
-    console.log("\u{2705} Arbitrage A->B->A executed");
-    console.log(`\u{1F4B8} Profit realized from arbitrage: ${Number(profitA)/1e18}`);
+    console.log(`\u{1F4B8} Profit in A realized from arbitrage: ${Number(profitA)/1e18}`);
+    console.log(`\u{1F4B8} Profit in B realized from arbitrage: ${Number(profitB)/1e18}`);
 
-    // --------- Scenario 2: No Arbitrage using TokenB ------------
-    console.log("\n\u{1F501} Trying Non-Profitable Arbitrage: TokenB as Input");
+    // ----------------- Scenario 2: No Arbitrage -----------------------
+    console.log("\n\u{1F501} Trying Non-Profitable Arbitrage: ");
 
     // Remove all liquidity from DEX2 to reset its ratio
     let lpBalance = await dex1.methods.get_lp_tokens(arbitrageur).call();
@@ -105,7 +111,6 @@ async function simulateArbitrage() {
     await dex1.methods.addLiquidity((1000n * SCALE).toString(), (2000n * SCALE).toString()).send({ from: arbitrageur });
     console.log("\u{1F4A7} Reset DEX1 with new liquidity ratio");
 
-
     // Remove all liquidity from DEX2 to reset its ratio
     lpBalance = await dex2.methods.get_lp_tokens(arbitrageur).call();
     await dex2.methods.removeLiquidity(lpBalance).send({ from: arbitrageur });
@@ -116,11 +121,6 @@ async function simulateArbitrage() {
     await dex2.methods.addLiquidity((1000n * SCALE).toString(), (2100n * SCALE).toString()).send({ from: arbitrageur });
     console.log("\u{1F4A7} Reset DEX2 with new liquidity ratio");
 
-
-    // Approving the arbitrage contract to draw 10 tokenB
-    await tokenA.methods.approve(arbAddress, (10n * SCALE).toString()).send({ from: arbitrageur });
-    console.log("\u{1F4E5} Approved 10 TokenB to Arbitrage Contract");
-
     // Print reserves before arbitrage
     resA1 = await dex1.methods.get_reserveA().call();
     resB1 = await dex1.methods.get_reserveB().call();
@@ -130,16 +130,31 @@ async function simulateArbitrage() {
     console.log(`\u{1F4CA} DEX1 Reserves - TokenA: ${resA1}, TokenB: ${resB1}`);
     console.log(`\u{1F4CA} DEX2 Reserves - TokenA: ${resA2}, TokenB: ${resB2}`);
 
-    const initialBalanceB = BigInt(await tokenA.methods.balanceOf(arbitrageur).call());
-    await arbitrage.methods.performArbitrage_A(
-        (10n * SCALE).toString(),
-        (3n * SCALE)
-    ).send({ from: arbitrageur });
+    initialBalanceA = BigInt(await tokenA.methods.balanceOf(arbitrageur).call());
+    initialBalanceB = BigInt(await tokenB.methods.balanceOf(arbitrageur).call());
 
-    const finalBalanceB = BigInt(await tokenA.methods.balanceOf(arbitrageur).call());
-    const profitB = finalBalanceB - initialBalanceB;
+    await tokenA.methods.approve(arbAddress, (initialBalanceA / 10n).toString()).send({ from: arbitrageur });
+    console.log("\u{1F4E5} Approved TokenA to Arbitrage Contract");
+    await tokenB.methods.approve(arbAddress, (initialBalanceB / 10n).toString()).send({ from: arbitrageur });
+    console.log("\u{1F4E5} Approved TokenB to Arbitrage Contract");
 
-    console.log(`\u{1F4B8} Profit realized from arbitrage: ${Number(profitB)/1e18}`);
+    try{
+        await arbitrage.methods.perform_arbitrage(
+            (10n * SCALE).toString(),
+            (initialBalanceB / 10n).toString(),
+            (3n * SCALE)
+        ).send({ from: arbitrageur });
+    }catch(err){
+        console.error(`Error in perform_arbitrage ${err.message}`);
+    }
+
+    finalBalanceA = BigInt(await tokenA.methods.balanceOf(arbitrageur).call());
+    finalBalanceB = BigInt(await tokenB.methods.balanceOf(arbitrageur).call());
+    profitA = finalBalanceA - initialBalanceA;
+    profitB = finalBalanceB - initialBalanceB;
+
+    console.log(`\u{1F4B8} Profit in A realized from arbitrage: ${Number(profitA)/1e18}`);
+    console.log(`\u{1F4B8} Profit in B realized from arbitrage: ${Number(profitB)/1e18}`);
 }
 
 simulateArbitrage();

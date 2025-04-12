@@ -7,6 +7,7 @@ import "contracts/LPToken.sol";
 import "contracts/Token.sol";
 import "contracts/DEX.sol";
 
+import "hardhat/console.sol";
 
 interface IDex {
     function spotPrice() external view returns (uint256);
@@ -26,6 +27,8 @@ contract Arbitrage {
     IERC20 internal tokenB;
 
     address internal owner;
+    address internal dex1Address;
+    address internal dex2Address;
 
     constructor(address _dex1, address _dex2) {
         dex1 = IDex(_dex1);
@@ -33,6 +36,13 @@ contract Arbitrage {
         tokenA = dex1.get_tokenA();
         tokenB = dex1.get_tokenB();
         owner = msg.sender;
+        dex1Address = _dex1;
+        dex2Address = _dex2;
+    }
+
+    function fail(uint256 amount) internal pure{
+        console.log("Value was:", amount);
+        revert("Reverted with value above");
     }
 
     function get_swap_A_to_B(uint256 amt, uint256 reserveA, uint256 reserveB) internal pure returns (uint256){
@@ -47,93 +57,69 @@ contract Arbitrage {
         return amt_A;   
     }
 
-    // owner gives token A to arbitrage
-    function performArbitrage_A(uint256 amountIn, uint256 threshold) external {
+    function perform_arbitrage(uint256 amt_A, uint256 amt_B, uint256 threshold_percent_scaled) external{
         require(msg.sender == owner, "Only owner can call");
         require(dex1.spotPrice() != dex2.spotPrice(), "Reserve ratios are the same");
-        require(tokenA.balanceOf(msg.sender) >= amountIn, "Insufficient balance");
-        
-        // Transfer amountIn TokenA from user to this contract
-        require(tokenA.transferFrom(msg.sender, address(this), amountIn), "Transfer failed");
+        require(tokenA.balanceOf(msg.sender) >= amt_A, "Insufficient token A balance");
+        require(tokenB.balanceOf(msg.sender) >= amt_B, "Insufficient token B balance");
 
-        uint256 minProfit = (threshold * amountIn) / 1e20;
+        // wherever A->B->A arbitrage is possible there B->A->B is also possible in the reverse direction
+        // so assume A->B->A happens left to right
+        // B->A->B happens right to left
 
-        uint256 dex1_res_A = dex1.get_reserveA();
-        uint256 dex1_res_B = dex1.get_reserveB();
-        uint256 dex2_res_A = dex2.get_reserveA();
-        uint256 dex2_res_B = dex2.get_reserveB();
-
-        uint256 price_B_1 = get_swap_A_to_B(amountIn, dex1_res_A, dex1_res_B);
-        uint256 price_A_2 = get_swap_B_to_A(price_B_1, dex2_res_A, dex2_res_B);
-
-        uint256 price_B_2 = get_swap_A_to_B(amountIn, dex2_res_A, dex2_res_B);
-        uint256 price_A_1 = get_swap_B_to_A(price_B_2, dex1_res_A, dex1_res_B);
-
-        if(price_A_2 > amountIn + minProfit){
-            tokenA.approve(address(dex1),amountIn);
-            dex1.swap_A_to_B(amountIn);
-            uint256 temp = tokenB.balanceOf(address(this));
-            tokenB.approve(address(dex2),temp);
-            dex2.swap_B_to_A(temp);   
-            temp = tokenA.balanceOf(address(this));
-            tokenA.transfer(owner, temp); // Send back capital + profit
+        IDex left = IDex(dex2Address);
+        IDex right = IDex(dex1Address);
+        if(dex1.spotPrice() < dex2.spotPrice()){
+            right = IDex(dex2Address);
+            left = IDex(dex1Address);
         }
-        else if(price_A_1 > amountIn + minProfit){
-            tokenA.approve(address(dex2),amountIn);
-            dex2.swap_A_to_B(amountIn);
-            uint256 temp = tokenB.balanceOf(address(this));
-            tokenB.approve(address(dex1),temp);
-            dex1.swap_B_to_A(temp);
-            temp = tokenA.balanceOf(address(this));   
-            tokenA.transfer(owner, temp); // Send back capital + profit
+
+        // uint256 optimal_A = (((997* 997 * right.get_reserveA()/1e6) - right.get_reserveB()) * left.get_reserveA())/((right.get_reserveA()*997)/1000 + (997*997*left.get_reserveB())/1e6);
+        // if(amt_A > optimal_A) amt_A = optimal_A;
+        // A->B->A
+        uint256 intermediate_price = get_swap_A_to_B(amt_A, left.get_reserveA(), left.get_reserveB());
+        uint256 final_price = get_swap_B_to_A(intermediate_price, right.get_reserveA(), right.get_reserveB());
+        uint256 profit_A_B_A = (final_price >= amt_A) ? (final_price - amt_A) : 0;
+
+
+        // uint256 optimal_B = (((997* 997 * left.get_reserveB()/1e6) - left.get_reserveA()) * right.get_reserveB())/((left.get_reserveB()*997)/1000 + (997*997*right.get_reserveA())/1e6);
+        // if(amt_B > optimal_B) amt_B = optimal_B;
+        // B->A->B
+        intermediate_price = get_swap_B_to_A(amt_B, right.get_reserveA(), right.get_reserveB());
+        final_price = get_swap_A_to_B(intermediate_price, left.get_reserveA(), left.get_reserveB());
+        uint256 profit_B_A_B = (final_price >= amt_B) ? (final_price - amt_B) : 0;
+        
+        if(profit_A_B_A == 0 && profit_B_A_B == 0) return;
+
+        uint256 minProfit;
+        if(profit_A_B_A > profit_B_A_B){
+            minProfit = (threshold_percent_scaled * amt_A)/ 1e20;
+            if(profit_A_B_A > minProfit){
+                require(tokenA.transferFrom(msg.sender, address(this), amt_A), "Transfer failed");
+
+                tokenA.approve(address(left),amt_A);
+                left.swap_A_to_B(amt_A);
+                intermediate_price = tokenB.balanceOf(address(this));
+                tokenB.approve(address(right),intermediate_price);
+                right.swap_B_to_A(intermediate_price);   
+                intermediate_price = tokenA.balanceOf(address(this));
+                tokenA.transfer(owner, intermediate_price); // Send back capital + profit
+            }   
         }
         else{
-            tokenA.transfer(owner, amountIn);       // send back capital
-        }
-    }
+            minProfit = (threshold_percent_scaled * amt_B)/ 1e20;
+            if(profit_B_A_B > minProfit){
+                require(tokenB.transferFrom(msg.sender, address(this), amt_B), "Transfer failed");
 
-    // owner gives token B to arbitrage
-    function performArbitrage_B(uint256 amountIn, uint256 threshold) external {
-        require(msg.sender == owner, "Only owner can call");
-        require(dex1.spotPrice() != dex2.spotPrice(), "Reserve ratios are the same");
-        require(tokenB.balanceOf(msg.sender) >= amountIn, "Insufficient balance");
-        
-        // Transfer amountIn TokenA from user to this contract
-        require(tokenB.transferFrom(msg.sender, address(this), amountIn), "Transfer failed");
-
-        uint256 minProfit = (threshold * amountIn) / 1e20;
-
-        uint256 dex1_res_A = dex1.get_reserveA();
-        uint256 dex1_res_B = dex1.get_reserveB();
-        uint256 dex2_res_A = dex2.get_reserveA();
-        uint256 dex2_res_B = dex2.get_reserveB();
-
-        uint256 price_A_1 = get_swap_B_to_A(amountIn, dex1_res_A, dex1_res_B);
-        uint256 price_B_2 = get_swap_A_to_B(price_A_1, dex2_res_A, dex2_res_B);
-
-        uint256 price_A_2 = get_swap_B_to_A(amountIn, dex2_res_A, dex2_res_B);
-        uint256 price_B_1 = get_swap_A_to_B(price_A_2, dex1_res_A, dex1_res_B);
-
-        if(price_B_2 > amountIn + minProfit){
-            tokenB.approve(address(dex1),amountIn);
-            dex1.swap_B_to_A(amountIn);
-            uint256 temp = tokenA.balanceOf(address(this));
-            tokenA.approve(address(dex2),temp);
-            dex2.swap_A_to_B(temp);   
-            temp = tokenB.balanceOf(address(this));
-            tokenB.transfer(owner, temp); // Send back capital + profit
-        }
-        else if(price_B_1 > amountIn + minProfit){
-            tokenB.approve(address(dex2),amountIn);
-            dex2.swap_B_to_A(amountIn);
-            uint256 temp = tokenA.balanceOf(address(this));
-            tokenA.approve(address(dex1),temp);
-            dex1.swap_A_to_B(temp);   
-            temp = tokenB.balanceOf(address(this));
-            tokenB.transfer(owner, temp); // Send back capital + profit
-        }
-        else{
-            tokenB.transfer(owner, amountIn);       // send back capital
+                tokenB.approve(address(right),amt_B);
+                right.swap_B_to_A(amt_B);
+                intermediate_price = tokenA.balanceOf(address(this));
+                tokenA.approve(address(left),intermediate_price);
+                left.swap_A_to_B(intermediate_price);   
+                intermediate_price = tokenB.balanceOf(address(this));
+                tokenB.transfer(owner, intermediate_price); // Send back capital + profit
+            }
         }
     }
 }
+
