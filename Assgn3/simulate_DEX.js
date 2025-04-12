@@ -1,3 +1,12 @@
+async function calculate_fees(tokenA, tokenB, dex, dexAddress){
+    let totA = await tokenA.methods.balanceOf(dexAddress).call();
+    let resA = await dex.methods.get_reserveA().call();
+
+    let totB = await tokenB.methods.balanceOf(dexAddress).call();
+    let resB = await dex.methods.get_reserveB().call();
+    return {amountA: totA - resA, amountB: totB - resB};
+}
+
 async function simulateDEX() {
     console.log("Starting DEX Simulation...");
 
@@ -6,13 +15,13 @@ async function simulateDEX() {
     const owner = accounts[0];
     const LPs = [owner, ...accounts.slice(1, 5)]; // owner + 4 LPs
     const traders = accounts.slice(5, 13);  // 8 traders
-    const initialBalances = {}; // user => { amountA: BigInt, amountB: BigInt }
     const spotPrices = []; // To store 61 spot prices
     const total_reservesA = [];     //61 vals
     const total_reservesB = [];     // 61 vals
     const slippages = []; // To store <=60 slippage values (only for swaps)
     const trade_lot_fractions = [];
     const lpTokenBalances = {}; // user => [array of lp token balances]
+    const earnings = {};
 
     const N = 60; // Number of transactions to simulate
     const SCALE = BigInt(1e18);
@@ -24,14 +33,35 @@ async function simulateDEX() {
     const tokenABI = tokenMetadata.abi;
     const dexABI = dexMetadata.abi;
 
-    // ---------------------- Deployed Contract Addresses -------------------------
-    const tokenAAddress = "0xdB9B39b354c01Eb512189e187FF5dD7A1d05797e";
-    const tokenBAddress = "0xF67ABE5f81F856c69869381fa46c094aF1855DbB";
-    const dexAddress = "0xD435321abf961D86fDb9b1054344df9Fe17eE485";
+    const tokenAFactory = new web3.eth.Contract(tokenABI);
+    const tokenBFactory = new web3.eth.Contract(tokenABI);
+    const dexFactory = new web3.eth.Contract(dexABI);
 
-    const tokenA = new web3.eth.Contract(tokenABI, tokenAAddress);
-    const tokenB = new web3.eth.Contract(tokenABI, tokenBAddress);
-    const dex = new web3.eth.Contract(dexABI, dexAddress);
+    const tokenA = await tokenAFactory.deploy({
+        data: tokenMetadata.data.bytecode.object,
+        arguments: [(BigInt(400000) * SCALE).toString()]
+    }).send({ from: owner, gas: 50000000 });
+    
+    const tokenB = await tokenBFactory.deploy({
+        data: tokenMetadata.data.bytecode.object,
+        arguments: [(BigInt(400000) * SCALE).toString()]
+    }).send({ from: owner, gas: 50000000 });
+
+    const dex = await dexFactory.deploy({
+        data: dexMetadata.data.bytecode.object,
+        arguments: [tokenA.options.address.toString(), tokenB.options.address.toString()]
+    }).send({ from: owner, gas: 50000000 });
+
+    const dexAddress = dex.options.address;
+
+    // ---------------------- Deployed Contract Addresses -------------------------
+    // const tokenAAddress = "0xd9145CCE52D386f254917e481eB44e9943F39138";
+    // const tokenBAddress = "0xd8b934580fcE35a11B58C6D73aDeE468a2833fa8";
+    // const dexAddress = "0xf8e81D47203A594245E36C48e151709F0C19fBe8";
+
+    // const tokenA = new web3.eth.Contract(tokenABI, tokenAAddress);
+    // const tokenB = new web3.eth.Contract(tokenABI, tokenBAddress);
+    // const dex = new web3.eth.Contract(dexABI, dexAddress);
 
     console.log("Loaded contracts successfully.");
 
@@ -39,6 +69,7 @@ async function simulateDEX() {
     console.log("Minting tokens to LPs and Traders...");
 
     for (let user of [...LPs, ...traders]) {
+        earnings[user] = {amountA: 0, amountB: 0};
         try {
             await tokenA.methods.transfer(user, (BigInt(2000) * SCALE).toString()).send({ from: owner });
             console.log(`\u2705 TokenA minted to ${user}`);
@@ -52,10 +83,6 @@ async function simulateDEX() {
         } catch (err) {
             console.error(`\u274C TokenB transfer failed for ${user}: ${err.message}`);
         }
-
-        amountA = BigInt(await tokenA.methods.balanceOf(user).call());
-        amountB = BigInt(await tokenB.methods.balanceOf(user).call());
-        initialBalances[user] = { amountA: amountA, amountB: amountB };
     }
 
     // ---------------------- LPs Add Liquidity -------------------------
@@ -86,8 +113,12 @@ async function simulateDEX() {
         await tokenA.methods.approve(dexAddress, amountA.toString()).send({ from: user });
         await tokenB.methods.approve(dexAddress, amountB.toString()).send({ from: user });
 
-        await dex.methods.addLiquidity(amountA.toString(), amountB.toString()).send({ from: user });
-        console.log(`\u2705 ${user} added liquidity: A=${Number(amountA) / 1e18}, B=${Number(amountB) / 1e18}`);
+        try{
+            await dex.methods.addLiquidity(amountA.toString(), amountB.toString()).send({ from: user });
+            console.log(`\u2705 ${user} added liquidity: A=${Number(amountA) / 1e18}, B=${Number(amountB) / 1e18}`);
+        } catch(err){
+            console.error(`${err.message}`);
+        }
 
         let lp_bal = BigInt(await dex.methods.get_lp_tokens(user).call());
         lpTokenBalances[user].push(Number(lp_bal)/1e18);
@@ -115,7 +146,11 @@ async function simulateDEX() {
                 if (lpBal > 0n) {
                     const maxwithdrawAmount = lpBal / 10n;
                     const withdrawAmount = BigInt(Math.floor(Number(maxwithdrawAmount) * Math.random()));
+                    let f1 = await calculate_fees(tokenA,tokenB,dex,dexAddress);
                     await dex.methods.removeLiquidity(withdrawAmount.toString()).send({ from: user });
+                    let f2 = await calculate_fees(tokenA,tokenB,dex,dexAddress);
+                    earnings[user].amountA += f1.amountA - f2.amountA;
+                    earnings[user].amountB += f1.amountB - f2.amountB;
                     console.log(`\u{1F504} LP ${user} removed liquidity: ${Number(withdrawAmount) / 1e18} LPT`);
                 }
             } else {
@@ -183,39 +218,25 @@ async function simulateDEX() {
     }
 
     console.log("\n\u{1F4B8} LPs removing all liquidity to realize fees...");
-    const finalWithdrawals = {}; // user => { amountA, amountB }
 
     for (const user of LPs) {
         const lpBal = BigInt(await dex.methods.get_lp_tokens(user).call());
         if (lpBal > 0n) {
             // Remove all liquidity
+            let f1 = await calculate_fees(tokenA,tokenB,dex,dexAddress);
             await dex.methods.removeLiquidity(lpBal.toString()).send({ from: user });
+            let f2 = await calculate_fees(tokenA,tokenB,dex,dexAddress);
             console.log(`\u{1F4DC} ${user} removed ${Number(lpBal) / 1e18} LPT`);
-
-            const finalA = BigInt(await tokenA.methods.balanceOf(user).call());
-            const finalB = BigInt(await tokenB.methods.balanceOf(user).call());
-
-            finalWithdrawals[user] = { amountA: finalA, amountB: finalB };
+            earnings[user].amountA += f1.amountA - f2.amountA;
+            earnings[user].amountB += f1.amountB - f2.amountB;
         }
     }
 
     console.log("\n--- \u{1F4B0} LP Earnings from Fees ---");
     for (const user of LPs) {
         try{
-            const initial = initialBalances[user];
-            const final = finalWithdrawals[user];
-
-            if (!initial || !final) continue;
-
-            let earnedA = final.amountA - initial.amountA;
-            let earnedB = final.amountB - initial.amountB;
-
-            // since owner initially minted money to all therefore he will be showing -26000
-            // so just ignoring that 
-            if (user === owner){
-                earnedA += BigInt(24e21);
-                earnedB += BigInt(24e21);
-            }
+            let earnedA = earnings[user].amountA;
+            let earnedB = earnings[user].amountB;
 
             console.log(`\u{1F464} LP ${user}`);
             console.log(`   • TokenA Earned in Fees: ${Number(earnedA) / 1e18}`);
