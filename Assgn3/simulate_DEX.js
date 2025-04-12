@@ -52,6 +52,10 @@ async function simulateDEX() {
         } catch (err) {
             console.error(`\u274C TokenB transfer failed for ${user}: ${err.message}`);
         }
+
+        amountA = BigInt(await tokenA.methods.balanceOf(user).call());
+        amountB = BigInt(await tokenB.methods.balanceOf(user).call());
+        initialBalances[user] = { amountA: amountA, amountB: amountB };
     }
 
     // ---------------------- LPs Add Liquidity -------------------------
@@ -87,10 +91,6 @@ async function simulateDEX() {
 
         let lp_bal = BigInt(await dex.methods.get_lp_tokens(user).call());
         lpTokenBalances[user].push(Number(lp_bal)/1e18);
-
-        amountA = BigInt(await tokenA.methods.balanceOf(user).call());
-        amountB = BigInt(await tokenB.methods.balanceOf(user).call());
-        initialBalances[user] = { amountA: amountA, amountB: amountB };
     }
     // ---------------------- Simulation Loop -------------------------
     console.log("Starting random simulation...");
