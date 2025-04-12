@@ -33,6 +33,7 @@ async function simulateDEX() {
     const tokenABI = tokenMetadata.abi;
     const dexABI = dexMetadata.abi;
 
+    // --------------------- Deploying Contracts --------------------------------
     const tokenAFactory = new web3.eth.Contract(tokenABI);
     const tokenBFactory = new web3.eth.Contract(tokenABI);
     const dexFactory = new web3.eth.Contract(dexABI);
@@ -52,12 +53,12 @@ async function simulateDEX() {
         arguments: [tokenA.options.address.toString(), tokenB.options.address.toString()]
     }).send({ from: owner, gas: 50000000 });
 
-    const dexAddress = dex.options.address;
+    const dexAddress = dex.options.address.toString();
 
     // ---------------------- Deployed Contract Addresses -------------------------
-    // const tokenAAddress = "0xd9145CCE52D386f254917e481eB44e9943F39138";
-    // const tokenBAddress = "0xd8b934580fcE35a11B58C6D73aDeE468a2833fa8";
-    // const dexAddress = "0xf8e81D47203A594245E36C48e151709F0C19fBe8";
+    // const tokenAAddress = "0x81f6D0417aCCaFEabf107Bd28c078702C44D7863";
+    // const tokenBAddress = "0xd3bB49346E4C34B9dB2841706A88B477A9b5F720";
+    // const dexAddress = "0xfc79Aa9DfabF722A72643d5597a8911e481bAd08";
 
     // const tokenA = new web3.eth.Contract(tokenABI, tokenAAddress);
     // const tokenB = new web3.eth.Contract(tokenABI, tokenBAddress);
@@ -105,9 +106,15 @@ async function simulateDEX() {
             amountB = BigInt(Math.floor(Number(max_amountB) * Math.random()));
         } else {
             // Choose an amountA and calculate amountB according to the ratio
-            let max_amountA = BigInt(await tokenA.methods.balanceOf(user).call({from: user})) / 10n;
-            amountA = BigInt(Math.floor(Number(max_amountA) * Math.random()));
+            let balA = BigInt(await tokenA.methods.balanceOf(user).call({from: user})) / 10n;
+            let balB = BigInt(await tokenB.methods.balanceOf(user).call({from: user})) / 10n;
+
+            amountA = BigInt(Math.floor(Number(balA) * Math.random()));
             amountB = (amountA * reserveB) / reserveA;
+            if(amountB > balB){
+                amountB = BigInt(Math.floor(Number(balB) * Math.random()));
+                amountA = (amountB * reserveA) / reserveB;
+            }
         }
 
         await tokenA.methods.approve(dexAddress, amountA.toString()).send({ from: user });
@@ -117,7 +124,7 @@ async function simulateDEX() {
             await dex.methods.addLiquidity(amountA.toString(), amountB.toString()).send({ from: user });
             console.log(`\u2705 ${user} added liquidity: A=${Number(amountA) / 1e18}, B=${Number(amountB) / 1e18}`);
         } catch(err){
-            console.error(`${err.message}`);
+            console.error(`${user}, ${Number(amountA)/Number(amountB)}, ${Number(reserveA)/Number(reserveB)}, ${err.message}`);
         }
 
         let lp_bal = BigInt(await dex.methods.get_lp_tokens(user).call());
@@ -153,6 +160,8 @@ async function simulateDEX() {
                     earnings[user].amountB += f1.amountB - f2.amountB;
                     console.log(`\u{1F504} LP ${user} removed liquidity: ${Number(withdrawAmount) / 1e18} LPT`);
                 }
+                else console.log(`lpBal 0 for ${i} user: ${user}`);
+
             } else {
                 // Trader swap
                 const tokenChoice = Math.random() < 0.5 ? 'A' : 'B';
@@ -174,6 +183,8 @@ async function simulateDEX() {
                         await dex.methods.swap_A_to_B(amount.toString()).send({ from: user });
                         console.log(`\u{1F501} Trader ${user} swapped ${Number(amount) / 1e18} A for B`);
                     }
+                    else console.log(`amountA is 0 for ${i} user: ${user}`);
+
                     let fini = BigInt(await tokenB.methods.balanceOf(user).call());
                     token2 = Number(fini - ini);
                 } else {
@@ -190,6 +201,8 @@ async function simulateDEX() {
                         await dex.methods.swap_B_to_A(amount.toString()).send({ from: user });
                         console.log(`\u{1F501} Trader ${user} swapped ${Number(amount) / 1e18} B for A`);
                     }
+                    else console.log(`amountB is 0 for ${i} user: ${user}`);
+
                     let fini = BigInt(await tokenA.methods.balanceOf(user).call());
                     token2 = Number(fini - ini);
                 }
@@ -276,7 +289,6 @@ async function simulateDEX() {
     }
     await remix.call('fileManager', 'writeFile', 'browser/lp_token_balances.txt', lpTokenBalanceText);
     console.log("\u{1F4C4} LP token balances written to browser/lp_token_balances.txt");
-
     
     const tot_A = await dex.methods.get_tot_feeA().call({ from: owner });
     const tot_B = await dex.methods.get_tot_feeB().call({ from: owner });

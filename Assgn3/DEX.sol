@@ -49,7 +49,7 @@ contract DEX {
         require(tokenB.balanceOf(msg.sender) >= amountB, "Insufficient token B balance");
         if(owner == address(0)) {
             owner = msg.sender;
-            lpToken.mint(owner, SCALE);     // giving 1 LP token to owner initially
+            lpToken.mint(owner, 5e12);     // giving 5e12 mini-LP tokens to owner initially
         }
 
         if (reserveA == 0 && reserveB == 0) {
