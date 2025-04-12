@@ -48,13 +48,15 @@ contract Arbitrage {
     }
 
     // owner gives token A to arbitrage
-    function performArbitrage_A(uint256 amountIn, uint256 minProfit) external {
+    function performArbitrage_A(uint256 amountIn, uint256 threshold) external {
         require(msg.sender == owner, "Only owner can call");
         require(dex1.spotPrice() != dex2.spotPrice(), "Reserve ratios are the same");
         require(tokenA.balanceOf(msg.sender) >= amountIn, "Insufficient balance");
         
         // Transfer amountIn TokenA from user to this contract
         require(tokenA.transferFrom(msg.sender, address(this), amountIn), "Transfer failed");
+
+        uint256 minProfit = (threshold * amountIn) / 1e20;
 
         uint256 dex1_res_A = dex1.get_reserveA();
         uint256 dex1_res_B = dex1.get_reserveB();
@@ -91,13 +93,15 @@ contract Arbitrage {
     }
 
     // owner gives token B to arbitrage
-    function performArbitrage_B(uint256 amountIn, uint256 minProfit) external {
+    function performArbitrage_B(uint256 amountIn, uint256 threshold) external {
         require(msg.sender == owner, "Only owner can call");
         require(dex1.spotPrice() != dex2.spotPrice(), "Reserve ratios are the same");
         require(tokenB.balanceOf(msg.sender) >= amountIn, "Insufficient balance");
         
         // Transfer amountIn TokenA from user to this contract
         require(tokenB.transferFrom(msg.sender, address(this), amountIn), "Transfer failed");
+
+        uint256 minProfit = (threshold * amountIn) / 1e20;
 
         uint256 dex1_res_A = dex1.get_reserveA();
         uint256 dex1_res_B = dex1.get_reserveB();
@@ -133,4 +137,3 @@ contract Arbitrage {
         }
     }
 }
-

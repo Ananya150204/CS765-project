@@ -64,7 +64,7 @@ contract DEX {
             uint256 a = (reserveA * SCALE) / reserveB;
             uint256 b = (amountA * SCALE) / amountB;
             require(
-                a > b ? (a-b < 1) : (b-a < 1),
+                a > b ? (a-b < 1) : (b-a < 1),          // Allowing 18th decimal place to be different
                 "Invalid deposit ratio"
             );
 
