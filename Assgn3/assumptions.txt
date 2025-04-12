@@ -1,1 +1,3 @@
 min and maximum micro tokens ka range assumption likhna h
+
+methods is an auto-generated object provided by Web3.js (or Ethers.js has similar things) when you create a contract instance from an ABI.
