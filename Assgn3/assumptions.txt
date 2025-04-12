@@ -1,3 +1,19 @@
 min and maximum micro tokens ka range assumption likhna h
 
 methods is an auto-generated object provided by Web3.js (or Ethers.js has similar things) when you create a contract instance from an ABI.
+
+.call() is like → read-only remote procedure call. Executes the function right now on the latest blockchain state — but only locally, without creating a transaction.
+
+.toString() is used because Web3.js .send() expects string values for large numbers (especially for uint256 in Solidity) to avoid precision loss.
+
+in Web3.js (and even in Ethers.js) → .call() returns everything (especially numbers) as string.
+
+calculate fees is by calculating the share of DEX before withdrawal (given by calculate_fees function). Post withdrawal of liquidity again u calculate the share of DEX. Subtract 2 from 1 to get fees which withdrawer gets.
+
+total_reservesA is an array like:
+[ '1000000000000000000', '1200000000000000000', '1400000000000000000' ]
+join('\n') converts it to a single string like:
+
+1000000000000000000
+1200000000000000000
+1400000000000000000
