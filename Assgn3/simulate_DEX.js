@@ -15,13 +15,14 @@ async function simulateDEX() {
     const owner = accounts[0];
     const LPs = [owner, ...accounts.slice(1, 5)]; // owner + 4 LPs
     const traders = accounts.slice(5, 13);  // 8 traders
-    const spotPrices = []; // To store 61 spot prices
-    const total_reservesA = [];     //61 vals
+    const spotPrices = [];          // To store 61 spot prices
+    const total_reservesA = [];     // 61 vals
     const total_reservesB = [];     // 61 vals
-    const slippages = []; // To store <=60 slippage values (only for swaps)
-    const trade_lot_fractions = [];
-    const lpTokenBalances = {}; // user => [array of lp token balances]
-    const earnings = {};
+    const slippages = [];           // To store <=60 slippage values (only for swaps)
+    const trade_lot_fractions = []; // To store <=60 tlf values (only for swaps)
+    const lpTokenBalances = {};     // user => [array of lp token balances], 61 values in each
+    const earnings = {};            // final earnings one value in each
+    let tot_swap_A = 0n, tot_swap_B = 0n;
 
     const N = 60; // Number of transactions to simulate
     const SCALE = BigInt(1e18);
@@ -173,6 +174,7 @@ async function simulateDEX() {
                     const balance = BigInt(await tokenA.methods.balanceOf(user).call());
                     const max_amount = balance < (reserveA / 10n) ? balance : (reserveA / 10n);
                     const amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
+                    tot_swap_A += amount;
                     token1 = Number(amount);
                     ratio = Number(reserveB) / Number(reserveA);
                     let ini = BigInt(await tokenB.methods.balanceOf(user).call());
@@ -191,7 +193,8 @@ async function simulateDEX() {
                     const balance = BigInt(await tokenB.methods.balanceOf(user).call());
                     const max_amount = balance < (reserveB / 10n) ? balance : (reserveB / 10n);
                     const amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
-                    token1 = Number(amount);
+                    tot_swap_B += amount;
+                    token1 = Number(amount);    
                     ratio = Number(reserveA)/Number(reserveB);
                     let ini = BigInt(await tokenA.methods.balanceOf(user).call());
                     tlf = Number(amount)/Number(reserveB);
@@ -209,7 +212,6 @@ async function simulateDEX() {
 
                 slip = ((token2/token1) - ratio)*100/ratio;
                 slippages.push(slip);
-
                 trade_lot_fractions.push(tlf);
             }
 
@@ -246,6 +248,8 @@ async function simulateDEX() {
     }
 
     console.log("\n--- \u{1F4B0} LP Earnings from Fees ---");
+    let tot_fee_A = 0n;
+    let tot_fee_B = 0n;
     for (const user of LPs) {
         try{
             let earnedA = earnings[user].amountA;
@@ -254,6 +258,9 @@ async function simulateDEX() {
             console.log(`\u{1F464} LP ${user}`);
             console.log(`   • TokenA Earned in Fees: ${Number(earnedA) / 1e18}`);
             console.log(`   • TokenB Earned in Fees: ${Number(earnedB) / 1e18}`);
+
+            tot_fee_A += BigInt(earnedA);
+            tot_fee_B += BigInt(earnedB);
         }catch(err){
             console.error(`${user}, ${err.message}`);
         }
@@ -290,17 +297,11 @@ async function simulateDEX() {
     await remix.call('fileManager', 'writeFile', 'browser/lp_token_balances.txt', lpTokenBalanceText);
     console.log("\u{1F4C4} LP token balances written to browser/lp_token_balances.txt");
     
-    const tot_A = await dex.methods.get_tot_feeA().call({ from: owner });
-    const tot_B = await dex.methods.get_tot_feeB().call({ from: owner });
+    console.log("Total fees of A collected: ",Number(tot_fee_A)/1e18);
+    console.log("Total fees of B collected: ",Number(tot_fee_B)/1e18);
 
-    const swap_A = await dex.methods.get_swapA().call({ from: owner });
-    const swap_B = await dex.methods.get_swapB().call({ from: owner });
-    
-    console.log("Total fees of A collected: ",Number(tot_A)/1e18);
-    console.log("Total fees of B collected: ",Number(tot_B)/1e18);
-
-    console.log("Total tokens of A swapped: ",Number(swap_A)/1e18);
-    console.log("Total tokens of B swapped: ",Number(swap_B)/1e18);
+    console.log("Total tokens of A swapped: ",Number(tot_swap_A)/1e18);
+    console.log("Total tokens of B swapped: ",Number(tot_swap_B)/1e18);
 
     console.log("\u2705 Simulation complete.");
 }

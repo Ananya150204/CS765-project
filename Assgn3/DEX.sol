@@ -17,11 +17,7 @@ contract DEX {
     uint256 private reserveA;               // reserves of A at any point
     uint256 private reserveB;               // reserves of B at any point
     uint256 private feeA;                   // Till a point, how much fees in A has been collected 
-    uint256 private feeB;                   // Till a point, how much fees in B has been collected 
-    uint256 private tot_feeA;               // How much fees overall was collected in A
-    uint256 private tot_feeB;               // How much fees overall was collected in B
-    uint256 private swap_A;                 // How much amount of A is swapped till a point
-    uint256 private swap_B;                 // How much amount of B is swapped till a point
+    uint256 private feeB;                   // Till a point, how much fees in B has been collected
     address private owner;
 
     uint256 private constant SCALE = 1e18;
@@ -35,10 +31,6 @@ contract DEX {
         reserveB = 0;
         feeA = 0;
         feeB = 0;
-        tot_feeA = 0;
-        tot_feeB = 0;
-        swap_A = 0;
-        swap_B = 0;
         owner = address(0);
     }
 
@@ -114,9 +106,7 @@ contract DEX {
         require(tokenA.transferFrom(msg.sender, address(this), amt),"Approve the swap from A");
         tokenB.transfer(msg.sender, amt_B);
 
-        swap_A += amt;
         feeA = feeA + amt - eff_A;
-        tot_feeA = tot_feeA + amt - eff_A;        
         reserveA += eff_A;
         reserveB -= amt_B;
     }
@@ -130,9 +120,7 @@ contract DEX {
         require(tokenB.transferFrom(msg.sender, address(this), amt),"Approve the swap from B");
         tokenA.transfer(msg.sender, amt_A);
 
-        swap_B += amt;
         feeB = feeB + amt - eff_B;   
-        tot_feeB = tot_feeB + amt - eff_B;   
         reserveA -= amt_A;
         reserveB += eff_B;
     }
@@ -167,26 +155,6 @@ contract DEX {
 
     function get_tokenB() external view returns (IERC20){
         return tokenB;
-    }
-
-    function get_tot_feeA() external view returns (uint256){
-        require(msg.sender == owner, "Only owner can view the fees of A");
-        return tot_feeA;
-    }
-
-    function get_tot_feeB() external view returns (uint256){
-        require(msg.sender == owner, "Only owner can view the fees of B");
-        return tot_feeB;
-    }
-
-    function get_swapA() external view returns (uint256){
-        require(msg.sender == owner, "Only owner can view the total swapped tokens of A");   
-        return swap_A;
-    }
-
-    function get_swapB() external view returns (uint256){
-        require(msg.sender == owner, "Only owner can view the total swapped tokens of B");   
-        return swap_B;
     }
 }
 
