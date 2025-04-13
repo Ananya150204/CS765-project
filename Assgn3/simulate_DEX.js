@@ -139,7 +139,7 @@ async function simulateDEX() {
                 amountA = BigInt(Math.floor(Number(balA) * Math.random()));
             }
             amountB = (amountA * reserveB) / reserveA;
-            if(amountB > balB){
+            if(amountB > 10n * balB){
                 amountB = BigInt(Math.floor(Number(balB) * Math.random()));
                 while(amountB === 0n){
                     amountB = BigInt(Math.floor(Number(balB) * Math.random()));
@@ -153,7 +153,7 @@ async function simulateDEX() {
 
         try{
             await dex.methods.addLiquidity(amountA.toString(), amountB.toString()).send({ from: user });
-            console.log(`\u2705 ${user} added liquidity: A=${Number(amountA) / 1e18}, B=${Number(amountB) / 1e18}`);
+            console.log(`\u2705 LP ${user} added liquidity: A=${Number(amountA) / 1e18}, B=${Number(amountB) / 1e18}`);
         } catch(err){
             console.error(`${user}, ${Number(amountA)/Number(amountB)}, ${Number(reserveA)/Number(reserveB)}, ${err.message}`);
         }
@@ -209,7 +209,7 @@ async function simulateDEX() {
                     }
 
                     let amountB = (amountA * reserveB) / reserveA;
-                    if(amountB > balB){
+                    if(amountB > 10n * balB){
                         amountB = BigInt(Math.floor(Number(balB) * Math.random()));
                         while(amountB === 0n){
                             amountB = BigInt(Math.floor(Number(balB) * Math.random()));
@@ -222,9 +222,9 @@ async function simulateDEX() {
 
                     try{
                         await dex.methods.addLiquidity(amountA.toString(), amountB.toString()).send({ from: user });
-                        console.log(`\u2705 ${user} added liquidity: A=${Number(amountA) / 1e18}, B=${Number(amountB) / 1e18}`);
+                        console.log(`\u2705 LP ${user} added liquidity: A=${Number(amountA) / 1e18}, B=${Number(amountB) / 1e18}`);
                     } catch(err){
-                        console.error(`error in random add liquidity ${amountA}, ${amountB}`);
+                        console.error(`error in random add liquidity ${amountA}, ${amountB}, ${Number(amountA)/Number(amountB)}, ${Number(reserveA)/Number(reserveB)}`);
                     }
                 }
             } else {
