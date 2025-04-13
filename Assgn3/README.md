@@ -14,6 +14,10 @@
 - `simulate_DEX.js` – Simulates the DEX with 5 LPs and 8 traders performing swaps, deposits, and withdrawals.
 - `simulate_arbitrage.js` – Demonstrates both profitable and unprofitable arbitrage scenarios using deployed DEX contracts.
 
+### Plotter
+
+- `plot.py` – This reads the files from the `data` directory and generate plots in `outputs` directory.
+
 ### Data Files (in `data/` directory)
 
 These files were generated during the simulation:
