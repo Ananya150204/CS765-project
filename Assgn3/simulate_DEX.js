@@ -24,7 +24,7 @@ async function simulateDEX() {
     const earnings = {};            // final earnings one value in each
     let tot_swap_A = 0n, tot_swap_B = 0n;
 
-    const N = 60; // Number of transactions to simulate
+    const N = 100; // Number of transactions to simulate
     const SCALE = BigInt(1e18);
 
     // ---------------------- Load ABIs -------------------------
@@ -169,14 +169,13 @@ async function simulateDEX() {
     total_reservesB.push(Number(resB)/1e18);
 
     for (let i = 0; i < N; i++) {
+        console.log(i);
+        const isLPAction = Math.random() < 0.4;
+        const userPool = isLPAction ? LPs : traders;
+        const user = userPool[Math.floor(Math.random() * userPool.length)];
+        const reserveA = BigInt(await dex.methods.get_reserveA().call());
+        const reserveB = BigInt(await dex.methods.get_reserveB().call());
         try{
-            console.log(i);
-            const isLPAction = Math.random() < 0.4;
-            const userPool = isLPAction ? LPs : traders;
-            const user = userPool[Math.floor(Math.random() * userPool.length)];
-            const reserveA = BigInt(await dex.methods.get_reserveA().call());
-            const reserveB = BigInt(await dex.methods.get_reserveB().call());
-
             if (isLPAction) {
                 const is_withdraw = Math.random() < 0.5;
                 if(is_withdraw){
@@ -211,14 +210,21 @@ async function simulateDEX() {
                     let amountB = (amountA * reserveB) / reserveA;
                     if(amountB > balB){
                         amountB = BigInt(Math.floor(Number(balB) * Math.random()));
+                        while(amountB === 0n){
+                            amountB = BigInt(Math.floor(Number(balB) * Math.random()));
+                        }
                         amountA = (amountB * reserveA) / reserveB;
                     }
 
                     await tokenA.methods.approve(dexAddress, amountA.toString()).send({ from: user });
                     await tokenB.methods.approve(dexAddress, amountB.toString()).send({ from: user });
 
-                    await dex.methods.addLiquidity(amountA.toString(), amountB.toString()).send({ from: user });
-                    console.log(`\u2705 ${user} added liquidity: A=${Number(amountA) / 1e18}, B=${Number(amountB) / 1e18}`);
+                    try{
+                        await dex.methods.addLiquidity(amountA.toString(), amountB.toString()).send({ from: user });
+                        console.log(`\u2705 ${user} added liquidity: A=${Number(amountA) / 1e18}, B=${Number(amountB) / 1e18}`);
+                    } catch(err){
+                        console.error(`error in random add liquidity ${amountA}, ${amountB}`);
+                    }
                 }
             } else {
                 // Trader swap
@@ -285,7 +291,7 @@ async function simulateDEX() {
             }
 
         }catch(err){
-            console.error(`Error at i = ${i}, ${err.message}`);
+            console.error(`Error at i = ${i}, is_LP_action: ${isLPAction}, ${err.message}`);
         }
     }
 
