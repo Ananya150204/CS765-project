@@ -7,8 +7,6 @@ import "contracts/LPToken.sol";
 import "contracts/Token.sol";
 import "contracts/DEX.sol";
 
-import "hardhat/console.sol";
-
 interface IDex {
     function spotPrice() external view returns (uint256);
     function get_reserveA() external view returns(uint256);
@@ -38,11 +36,6 @@ contract Arbitrage {
         owner = msg.sender;
         dex1Address = _dex1;
         dex2Address = _dex2;
-    }
-
-    function fail(uint256 amount) internal pure{
-        console.log("Value was:", amount);
-        revert("Reverted with value above");
     }
 
     function get_swap_A_to_B(uint256 amt, uint256 reserveA, uint256 reserveB) internal pure returns (uint256){
