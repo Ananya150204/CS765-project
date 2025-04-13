@@ -53,6 +53,8 @@ contract Arbitrage {
     function perform_arbitrage(uint256 amt_A, uint256 amt_B, uint256 threshold_percent_scaled) external{
         require(msg.sender == owner, "Only owner can call");
         require(dex1.spotPrice() != dex2.spotPrice(), "Reserve ratios are the same");
+        require(amt_A > 0, "Zero amount of token A");
+        require(amt_B > 0, "Zero amount of token B");
         require(tokenA.balanceOf(msg.sender) >= amt_A, "Insufficient token A balance");
         require(tokenB.balanceOf(msg.sender) >= amt_B, "Insufficient token B balance");
 
@@ -76,37 +78,28 @@ contract Arbitrage {
         intermediate_price = get_swap_B_to_A(amt_B, right.get_reserveA(), right.get_reserveB());
         final_price = get_swap_A_to_B(intermediate_price, left.get_reserveA(), left.get_reserveB());
         uint256 profit_B_A_B = (final_price >= amt_B) ? (final_price - amt_B) : 0;
-        
-        if(profit_A_B_A == 0 && profit_B_A_B == 0) return;
 
-        uint256 minProfit;
-        if(profit_A_B_A > profit_B_A_B){
-            minProfit = (threshold_percent_scaled * amt_A)/ 1e20;
-            if(profit_A_B_A > minProfit){
-                require(tokenA.transferFrom(msg.sender, address(this), amt_A), "Transfer failed");
+        if(profit_A_B_A >= (threshold_percent_scaled * amt_A)/ 1e20){
+            require(tokenA.transferFrom(msg.sender, address(this), amt_A), "Transfer failed");
 
-                tokenA.approve(address(left),amt_A);
-                left.swap_A_to_B(amt_A);
-                intermediate_price = tokenB.balanceOf(address(this));
-                tokenB.approve(address(right),intermediate_price);
-                right.swap_B_to_A(intermediate_price);   
-                intermediate_price = tokenA.balanceOf(address(this));
-                tokenA.transfer(owner, intermediate_price); // Send back capital + profit
-            }   
+            tokenA.approve(address(left),amt_A);
+            left.swap_A_to_B(amt_A);
+            intermediate_price = tokenB.balanceOf(address(this));
+            tokenB.approve(address(right),intermediate_price);
+            right.swap_B_to_A(intermediate_price);   
+            intermediate_price = tokenA.balanceOf(address(this));
+            tokenA.transfer(owner, intermediate_price); // Send back capital + profit
         }
-        else{
-            minProfit = (threshold_percent_scaled * amt_B)/ 1e20;
-            if(profit_B_A_B > minProfit){
-                require(tokenB.transferFrom(msg.sender, address(this), amt_B), "Transfer failed");
+        else if(profit_B_A_B >= (threshold_percent_scaled * amt_B)/ 1e20){
+            require(tokenB.transferFrom(msg.sender, address(this), amt_B), "Transfer failed");
 
-                tokenB.approve(address(right),amt_B);
-                right.swap_B_to_A(amt_B);
-                intermediate_price = tokenA.balanceOf(address(this));
-                tokenA.approve(address(left),intermediate_price);
-                left.swap_A_to_B(intermediate_price);   
-                intermediate_price = tokenB.balanceOf(address(this));
-                tokenB.transfer(owner, intermediate_price); // Send back capital + profit
-            }
+            tokenB.approve(address(right),amt_B);
+            right.swap_B_to_A(amt_B);
+            intermediate_price = tokenA.balanceOf(address(this));
+            tokenA.approve(address(left),intermediate_price);
+            left.swap_A_to_B(intermediate_price);   
+            intermediate_price = tokenB.balanceOf(address(this));
+            tokenB.transfer(owner, intermediate_price); // Send back capital + profit
         }
     }
 }
