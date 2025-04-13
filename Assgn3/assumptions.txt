@@ -17,3 +17,50 @@ join('\n') converts it to a single string like:
 1000000000000000000
 1200000000000000000
 1400000000000000000
+
+
+Enlist all the measures you took in your report.
+
+
+
+const tokenMetadata = JSON.parse(await remix.call('fileManager', 'getFile', 'browser/contracts/artifacts/Token.json'));
+const dexMetadata = JSON.parse(await remix.call('fileManager', 'getFile', 'browser/contracts/artifacts/DEX.json'));
+Reads the compiled contract files from Remix (browser storage).
+
+These JSON files contain:
+
+abi → Function definitions (needed to interact)
+
+bytecode → Compiled contract code (needed to deploy)
+
+
+
+const tokenABI = tokenMetadata.abi;
+const dexABI = dexMetadata.abi;
+→ Used to tell Web3:
+
+"Here’s how the functions of this contract look like."
+
+
+
+const tokenAFactory = new web3.eth.Contract(tokenABI);
+const tokenBFactory = new web3.eth.Contract(tokenABI);
+const dexFactory = new web3.eth.Contract(dexABI);
+These are blueprints (not deployed yet).
+
+Using the ABI — ready to deploy or interact.
+
+
+const tokenA = await tokenAFactory.deploy({
+    data: tokenMetadata.data.bytecode.object,
+    arguments: [(BigInt(400000) * SCALE).toString()]
+}).send({ from: owner, gas: 50000000 });
+Same for tokenB
+
+Deploying ERC20 tokens with initial supply 400000 * SCALE
+
+.deploy() → prepares deployment.
+
+.send() → sends the transaction to blockchain.
+
+
