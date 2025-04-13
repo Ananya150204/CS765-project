@@ -16,22 +16,26 @@ async function simulateArbitrage() {
     const SCALE = BigInt(1e18);
 
     // --------- Deploy Tokens ------------
+    console.log(`Deploying Token A`);
     const tokenA = await new web3.eth.Contract(tokenABI).deploy({
         data: tokenMetadata.data.bytecode.object,
         arguments: [(BigInt(100000) * SCALE).toString()]
     }).send({ from: arbitrageur, gas: 60000000 });
 
+    console.log(`Deploying Token B`);
     const tokenB = await new web3.eth.Contract(tokenABI).deploy({
         data: tokenMetadata.data.bytecode.object,
         arguments: [(BigInt(100000) * SCALE).toString()]
     }).send({ from: arbitrageur, gas: 60000000 });
 
     // --------- Deploy 2 DEXes ------------
+    console.log(`Deploying DEX 1`);
     const dex1 = await new web3.eth.Contract(dexABI).deploy({
         data: dexMetadata.data.bytecode.object,
         arguments: [tokenA.options.address, tokenB.options.address]
     }).send({ from: arbitrageur, gas: 70000000 });
 
+    console.log(`Deploying DEX 2`);
     const dex2 = await new web3.eth.Contract(dexABI).deploy({
         data: dexMetadata.data.bytecode.object,
         arguments: [tokenA.options.address, tokenB.options.address]
@@ -52,11 +56,11 @@ async function simulateArbitrage() {
     console.log("\u{1F4A7} Liquidity added to DEX1 and DEX2");
 
     // --------- Deploy Arbitrage Contract ------------
+    console.log(`Deploying Arbitrage`);
     const arbitrage = await new web3.eth.Contract(arbABI).deploy({
         data: arbMetadata.data.bytecode.object,
         arguments: [dex1Address, dex2Address]
-    }).send({ from: arbitrageur, gas: 70000000 });
-
+    }).send({ from: arbitrageur, gas: 7000000 });
     const arbAddress = arbitrage.options.address;
 
 

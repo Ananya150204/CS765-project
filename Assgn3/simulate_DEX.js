@@ -10,21 +10,24 @@ async function calculate_fees(tokenA, tokenB, dex, dexAddress){
 async function simulateDEX() {
     console.log("Starting DEX Simulation...");
 
-    // Get all accounts from Remix
     const accounts = await web3.eth.getAccounts();
     const owner = accounts[0];
-    const LPs = [owner, ...accounts.slice(1, 5)]; // owner + 4 LPs
-    const traders = accounts.slice(5, 13);  // 8 traders
-    const spotPrices = [];          // To store 61 spot prices
-    const total_reservesA = [];     // 61 vals
-    const total_reservesB = [];     // 61 vals
-    const slippages = [];           // To store <=60 slippage values (only for swaps)
-    const trade_lot_fractions = []; // To store <=60 tlf values (only for swaps)
-    const lpTokenBalances = {};     // user => [array of lp token balances], 61 values in each
-    const earnings = {};            // final earnings one value in each
-    let tot_swap_A = 0n, tot_swap_B = 0n;
+    const LPs = [owner, ...accounts.slice(1, 5)];   // owner + 4 LPs (5 total LPs)
+    const traders = accounts.slice(5, 13);          // 8 traders
+    const spotPrices = [];                          // To store N+1 spot prices
+    const TVL = [];                                 // N+1 vals
+    const slippages = [];                           // To store <=N slippage values (only for swaps)
+    const trade_lot_fractions = [];                 // To store <=N tlf values (only for swaps)
+    const lpTokenBalances = {};                     // user => [array of lp token balances], N+1 values in each
+    const earnings = {};                            // final earnings one value in each
+    const swapped_A = [0];                          // N+1 values (even if swap doesn't happen it will stay same for that transaction)
+    const swapped_B = [0];                          // N+1 values (even if swap doesn't happen it will stay same for that transaction)
+    const fees_of_A = [0];                          // N+1 values (even if swap doesn't happen it will stay same for that transaction)    
+    const fees_of_B = [0];                          // N+1 values (even if swap doesn't happen it will stay same for that transaction)    
+    let tot_swap_A = 0n, tot_swap_B = 0n;           // Storing total tokens swapped at any point of time
+    let tot_fee_A = 0n, tot_fee_B = 0n;             // Storing total fees collected by the DEX at any time
 
-    const N = 100; // Number of transactions to simulate
+    const N = 100;                                  // Number of transactions to simulate
     const SCALE = BigInt(1e18);
 
     // ---------------------- Load ABIs -------------------------
@@ -164,9 +167,7 @@ async function simulateDEX() {
     let sp = await dex.methods.spotPrice().call();
     spotPrices.push(Number(sp)/1e18);
     let resA = await dex.methods.get_reserveA().call();
-    let resB = await dex.methods.get_reserveB().call();
-    total_reservesA.push(Number(resA)/1e18);
-    total_reservesB.push(Number(resB)/1e18);
+    TVL.push(Number(2*resA)/1e18);
 
     for (let i = 0; i < N; i++) {
         console.log(i);
@@ -240,6 +241,7 @@ async function simulateDEX() {
                     }
 
                     tot_swap_A += amount;
+                    tot_fee_A += (3n*amount)/1000n;
                     token1 = Number(amount);
                     ratio = Number(reserveB) / Number(reserveA);
                     let ini = BigInt(await tokenB.methods.balanceOf(user).call());
@@ -259,6 +261,7 @@ async function simulateDEX() {
                         amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
                     }
                     tot_swap_B += amount;
+                    tot_fee_B += (3n*amount)/1000n;
                     token1 = Number(amount);    
                     ratio = Number(reserveA)/Number(reserveB);
                     let ini = BigInt(await tokenA.methods.balanceOf(user).call());
@@ -281,9 +284,11 @@ async function simulateDEX() {
             sp = await dex.methods.spotPrice().call();
             spotPrices.push(Number(sp)/1e18);
             resA = await dex.methods.get_reserveA().call();
-            resB = await dex.methods.get_reserveB().call();
-            total_reservesA.push(Number(resA)/1e18);
-            total_reservesB.push(Number(resB)/1e18);
+            TVL.push(Number(2*resA)/1e18);
+            swapped_A.push(Number(tot_swap_A)/1e18);
+            swapped_B.push(Number(tot_swap_B)/1e18);
+            fees_of_A.push(Number(tot_fee_A)/1e18);
+            fees_of_B.push(Number(tot_fee_B)/1e18);
 
             for (const lp of LPs) {
                 const lpBal = BigInt(await dex.methods.get_lp_tokens(lp).call());
@@ -309,9 +314,7 @@ async function simulateDEX() {
         }
     }
 
-    console.log("\n--- \u{1F4B0} LP Earnings from Fees ---");
-    let tot_fee_A = 0n;
-    let tot_fee_B = 0n;
+    console.log("\n--- \u{1F4B0} LP Earnings from Fees ---");    
     for (const user of LPs) {
         try{
             let earnedA = earnings[user].amountA;
@@ -321,8 +324,6 @@ async function simulateDEX() {
             console.log(`   • TokenA Earned in Fees: ${Number(earnedA) / 1e18}`);
             console.log(`   • TokenB Earned in Fees: ${Number(earnedB) / 1e18}`);
 
-            tot_fee_A += BigInt(earnedA);
-            tot_fee_B += BigInt(earnedB);
         }catch(err){
             console.error(`${user}, ${err.message}`);
         }
@@ -336,34 +337,42 @@ async function simulateDEX() {
     await remix.call('fileManager', 'writeFile', 'browser/spot_prices.txt', spotPricesText);
     console.log("\u{1F4C4} Spot prices written to browser/spot_prices.txt");
 
-    const total_reservesAText = total_reservesA.join('\n');
-    await remix.call('fileManager', 'writeFile', 'browser/total_reservesA.txt', total_reservesAText);
-    console.log("\u{1F4C4} Spot prices written to browser/total_reservesA.txt");
-
-    const total_reservesBText = total_reservesB.join('\n');
-    await remix.call('fileManager', 'writeFile', 'browser/total_reservesB.txt', total_reservesBText);
-    console.log("\u{1F4C4} Spot prices written to browser/total_reservesB.txt");
+    const TVLText = TVL.join('\n');
+    await remix.call('fileManager', 'writeFile', 'browser/TVL.txt', TVLText);
+    console.log("\u{1F4C4} TVL written to browser/TVL.txt");
 
     const slippagesText = slippages.join('\n');
     await remix.call('fileManager', 'writeFile', 'browser/slippages.txt', slippagesText);
-    console.log("\u{1F4C4} Spot prices written to browser/slippages.txt");
+    console.log("\u{1F4C4} Slippages written to browser/slippages.txt");
 
     const trade_lot_fractionsText = trade_lot_fractions.join('\n');
     await remix.call('fileManager', 'writeFile', 'browser/trade_lot_fractions.txt', trade_lot_fractionsText);
-    console.log("\u{1F4C4} Spot prices written to browser/trade_lot_fractions.txt");
+    console.log("\u{1F4C4} Trade lot fractions written to browser/trade_lot_fractions.txt");
 
-    let lpTokenBalanceText = "";
+    let lpIndex = 1;
     for (const lp of LPs) {
-        lpTokenBalanceText += `LP ${lp}:\n` + lpTokenBalances[lp].join(', ') + "\n\n";
+        const balancesText = lpTokenBalances[lp].join('\n'); 
+        const fileName = `browser/lp_${lpIndex}.txt`; 
+        await remix.call('fileManager', 'writeFile', fileName, balancesText);
+        console.log(`\u{1F4C4} LP ${lp} balances written to ${fileName}`);
+        lpIndex++;
     }
-    await remix.call('fileManager', 'writeFile', 'browser/lp_token_balances.txt', lpTokenBalanceText);
-    console.log("\u{1F4C4} LP token balances written to browser/lp_token_balances.txt");
-    
-    console.log("Total fees of A collected: ",Number(tot_fee_A)/1e18);
-    console.log("Total fees of B collected: ",Number(tot_fee_B)/1e18);
 
-    console.log("Total tokens of A swapped: ",Number(tot_swap_A)/1e18);
-    console.log("Total tokens of B swapped: ",Number(tot_swap_B)/1e18);
+    const swapped_AText = swapped_A.join('\n');
+    await remix.call('fileManager', 'writeFile', 'browser/swapped_A.txt', swapped_AText);
+    console.log("\u{1F4C4} Total tokens of A swapped written to browser/swapped_A.txt");
+
+    const swapped_BText = swapped_B.join('\n');
+    await remix.call('fileManager', 'writeFile', 'browser/swapped_B.txt', swapped_BText);
+    console.log("\u{1F4C4} Total tokens of B swapped written to browser/swapped_B.txt");
+
+    const fees_of_AText = fees_of_A.join('\n');
+    await remix.call('fileManager', 'writeFile', 'browser/fees_of_A.txt', fees_of_AText);
+    console.log("\u{1F4C4} Total fees collected in A written to browser/fees_of_A.txt");
+
+    const fees_of_BText = fees_of_B.join('\n');
+    await remix.call('fileManager', 'writeFile', 'browser/fees_of_B.txt', fees_of_BText);
+    console.log("\u{1F4C4} Total fees collected in B written to browser/fees_of_B.txt");
 
     console.log("\u2705 Simulation complete.");
 }

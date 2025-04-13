@@ -74,16 +74,11 @@ contract Arbitrage {
             left = IDex(dex1Address);
         }
 
-        // uint256 optimal_A = (((997* 997 * right.get_reserveA()/1e6) - right.get_reserveB()) * left.get_reserveA())/((right.get_reserveA()*997)/1000 + (997*997*left.get_reserveB())/1e6);
-        // if(amt_A > optimal_A) amt_A = optimal_A;
         // A->B->A
         uint256 intermediate_price = get_swap_A_to_B(amt_A, left.get_reserveA(), left.get_reserveB());
         uint256 final_price = get_swap_B_to_A(intermediate_price, right.get_reserveA(), right.get_reserveB());
         uint256 profit_A_B_A = (final_price >= amt_A) ? (final_price - amt_A) : 0;
 
-
-        // uint256 optimal_B = (((997* 997 * left.get_reserveB()/1e6) - left.get_reserveA()) * right.get_reserveB())/((left.get_reserveB()*997)/1000 + (997*997*right.get_reserveA())/1e6);
-        // if(amt_B > optimal_B) amt_B = optimal_B;
         // B->A->B
         intermediate_price = get_swap_B_to_A(amt_B, right.get_reserveA(), right.get_reserveB());
         final_price = get_swap_A_to_B(intermediate_price, left.get_reserveA(), left.get_reserveB());
