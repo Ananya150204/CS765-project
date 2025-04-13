@@ -71,17 +71,29 @@ async function simulateDEX() {
     console.log("Minting tokens to LPs and Traders...");
 
     for (let user of [...LPs, ...traders]) {
-        earnings[user] = {amountA: 0, amountB: 0};
+        if(user === owner) continue;
         try {
-            await tokenA.methods.transfer(user, (BigInt(2000) * SCALE).toString()).send({ from: owner });
-            console.log(`\u2705 TokenA minted to ${user}`);
+            let max_amount = BigInt(await tokenA.methods.balanceOf(owner).call({from: owner})) / 20n;
+            let amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
+            while(amount === 0n){
+                amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
+            }
+
+            await tokenA.methods.transfer(user, amount.toString()).send({ from: owner });
+            console.log(`\u2705 ${amount} TokenA minted to ${user}`);
         } catch (err) {
             console.error(`\u274C TokenA transfer failed for ${user}: ${err.message}`);
         }
 
         try {
-            await tokenB.methods.transfer(user, (BigInt(2000) * SCALE).toString()).send({ from: owner });
-            console.log(`\u2705 TokenB minted to ${user}`);
+            let max_amount = BigInt(await tokenB.methods.balanceOf(owner).call({from: owner})) / 20n;
+            let amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
+            while(amount === 0n){
+                amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
+            }
+
+            await tokenB.methods.transfer(user, amount.toString()).send({ from: owner });
+            console.log(`\u2705 ${amount} TokenB minted to ${user}`);
         } catch (err) {
             console.error(`\u274C TokenB transfer failed for ${user}: ${err.message}`);
         }
@@ -92,28 +104,43 @@ async function simulateDEX() {
 
     for (let i = 0; i < LPs.length; i++) {
         const user = LPs[i];
+        earnings[user] = {amountA: 0, amountB: 0};
         lpTokenBalances[user] = [];
         let amountA, amountB;
 
         // Get current reserves from DEX
         const reserveA = BigInt(await dex.methods.get_reserveA().call());
         const reserveB = BigInt(await dex.methods.get_reserveB().call());
+
         if ((reserveA === 0n) && (reserveB === 0n)) {
             // First LP can choose arbitrary values
             let max_amountA = BigInt(await tokenA.methods.balanceOf(user).call({from: user})) / 10n;
             amountA = BigInt(Math.floor(Number(max_amountA) * Math.random()));
+            while(amountA === 0n){
+                amountA = BigInt(Math.floor(Number(max_amountA) * Math.random()));
+            }
 
             let max_amountB = BigInt(await tokenB.methods.balanceOf(user).call({from: user})) / 10n;
             amountB = BigInt(Math.floor(Number(max_amountB) * Math.random()));
+            while(amountB === 0n){
+                amountB = BigInt(Math.floor(Number(max_amountB) * Math.random()));
+            }
+
         } else {
             // Choose an amountA and calculate amountB according to the ratio
             let balA = BigInt(await tokenA.methods.balanceOf(user).call({from: user})) / 10n;
             let balB = BigInt(await tokenB.methods.balanceOf(user).call({from: user})) / 10n;
 
             amountA = BigInt(Math.floor(Number(balA) * Math.random()));
+            while(amountA === 0n){
+                amountA = BigInt(Math.floor(Number(balA) * Math.random()));
+            }
             amountB = (amountA * reserveB) / reserveA;
             if(amountB > balB){
                 amountB = BigInt(Math.floor(Number(balB) * Math.random()));
+                while(amountB === 0n){
+                    amountB = BigInt(Math.floor(Number(balB) * Math.random()));
+                }
                 amountA = (amountB * reserveA) / reserveB;
             }
         }
@@ -147,45 +174,74 @@ async function simulateDEX() {
             const isLPAction = Math.random() < 0.4;
             const userPool = isLPAction ? LPs : traders;
             const user = userPool[Math.floor(Math.random() * userPool.length)];
+            const reserveA = BigInt(await dex.methods.get_reserveA().call());
+            const reserveB = BigInt(await dex.methods.get_reserveB().call());
 
             if (isLPAction) {
-                // LP withdraws liquidity
-                const lpBal = BigInt(await dex.methods.get_lp_tokens(user).call());
-                if (lpBal > 0n) {
-                    const maxwithdrawAmount = lpBal / 10n;
-                    const withdrawAmount = BigInt(Math.floor(Number(maxwithdrawAmount) * Math.random()));
-                    let f1 = await calculate_fees(tokenA,tokenB,dex,dexAddress);
-                    await dex.methods.removeLiquidity(withdrawAmount.toString()).send({ from: user });
-                    let f2 = await calculate_fees(tokenA,tokenB,dex,dexAddress);
-                    earnings[user].amountA += f1.amountA - f2.amountA;
-                    earnings[user].amountB += f1.amountB - f2.amountB;
-                    console.log(`\u{1F504} LP ${user} removed liquidity: ${Number(withdrawAmount) / 1e18} LPT`);
-                }
-                else console.log(`lpBal 0 for ${i} user: ${user}`);
+                const is_withdraw = Math.random() < 0.5;
+                if(is_withdraw){
+                    // LP withdraws liquidity
+                    const lpBal = BigInt(await dex.methods.get_lp_tokens(user).call());
+                    if (lpBal > 0n) {
+                        const maxwithdrawAmount = lpBal / 10n;
+                        let withdrawAmount = BigInt(Math.floor(Number(maxwithdrawAmount) * Math.random()));
+                        while(withdrawAmount === 0n){
+                            withdrawAmount = BigInt(Math.floor(Number(maxwithdrawAmount) * Math.random()));
+                        }
 
+                        let f1 = await calculate_fees(tokenA,tokenB,dex,dexAddress);
+                        await dex.methods.removeLiquidity(withdrawAmount.toString()).send({ from: user });
+                        let f2 = await calculate_fees(tokenA,tokenB,dex,dexAddress);
+                        earnings[user].amountA += f1.amountA - f2.amountA;
+                        earnings[user].amountB += f1.amountB - f2.amountB;
+                        console.log(`\u{1F504} LP ${user} removed liquidity: ${Number(withdrawAmount) / 1e18} LPT`);
+                    }
+                    else console.log(`lpBal 0 for ${i} user: ${user}`);
+                }else{
+                    // LP adds liquidity
+                    // Choose an amountA and calculate amountB according to the ratio
+                    let balA = BigInt(await tokenA.methods.balanceOf(user).call({from: user})) / 10n;
+                    let balB = BigInt(await tokenB.methods.balanceOf(user).call({from: user})) / 10n;
+
+                    let amountA = BigInt(Math.floor(Number(balA) * Math.random()));
+                    while(amountA === 0n){
+                        amountA = BigInt(Math.floor(Number(balA) * Math.random()));
+                    }
+
+                    let amountB = (amountA * reserveB) / reserveA;
+                    if(amountB > balB){
+                        amountB = BigInt(Math.floor(Number(balB) * Math.random()));
+                        amountA = (amountB * reserveA) / reserveB;
+                    }
+
+                    await tokenA.methods.approve(dexAddress, amountA.toString()).send({ from: user });
+                    await tokenB.methods.approve(dexAddress, amountB.toString()).send({ from: user });
+
+                    await dex.methods.addLiquidity(amountA.toString(), amountB.toString()).send({ from: user });
+                    console.log(`\u2705 ${user} added liquidity: A=${Number(amountA) / 1e18}, B=${Number(amountB) / 1e18}`);
+                }
             } else {
                 // Trader swap
                 const tokenChoice = Math.random() < 0.5 ? 'A' : 'B';
-                const reserveA = BigInt(await dex.methods.get_reserveA().call());
-                const reserveB = BigInt(await dex.methods.get_reserveB().call());
                 let slip,token1,token2,ratio,tlf;
 
                 if (tokenChoice === 'A') {
                     const balance = BigInt(await tokenA.methods.balanceOf(user).call());
                     const max_amount = balance < (reserveA / 10n) ? balance : (reserveA / 10n);
-                    const amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
+                    let amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
+                    while(amount === 0n){
+                        amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
+                    }
+
                     tot_swap_A += amount;
                     token1 = Number(amount);
                     ratio = Number(reserveB) / Number(reserveA);
                     let ini = BigInt(await tokenB.methods.balanceOf(user).call());
                     tlf = Number(amount)/Number(reserveA);
 
-                    if (amount > 0n) {
-                        await tokenA.methods.approve(dexAddress, amount.toString()).send({ from: user });
-                        await dex.methods.swap_A_to_B(amount.toString()).send({ from: user });
-                        console.log(`\u{1F501} Trader ${user} swapped ${Number(amount) / 1e18} A for B`);
-                    }
-                    else console.log(`amountA is 0 for ${i} user: ${user}`);
+                    await tokenA.methods.approve(dexAddress, amount.toString()).send({ from: user });
+                    await dex.methods.swap_A_to_B(amount.toString()).send({ from: user });
+                    console.log(`\u{1F501} Trader ${user} swapped ${Number(amount) / 1e18} A for B`);
 
                     let fini = BigInt(await tokenB.methods.balanceOf(user).call());
                     token2 = Number(fini - ini);
@@ -193,18 +249,19 @@ async function simulateDEX() {
                     const balance = BigInt(await tokenB.methods.balanceOf(user).call());
                     const max_amount = balance < (reserveB / 10n) ? balance : (reserveB / 10n);
                     const amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
+                    while(amount === 0n){
+                        amount = BigInt(Math.floor(Number(max_amount) * Math.random()));
+                    }
                     tot_swap_B += amount;
                     token1 = Number(amount);    
                     ratio = Number(reserveA)/Number(reserveB);
                     let ini = BigInt(await tokenA.methods.balanceOf(user).call());
                     tlf = Number(amount)/Number(reserveB);
 
-                    if (amount > 0n) {
-                        await tokenB.methods.approve(dexAddress, amount.toString()).send({ from: user });
-                        await dex.methods.swap_B_to_A(amount.toString()).send({ from: user });
-                        console.log(`\u{1F501} Trader ${user} swapped ${Number(amount) / 1e18} B for A`);
-                    }
-                    else console.log(`amountB is 0 for ${i} user: ${user}`);
+                    await tokenB.methods.approve(dexAddress, amount.toString()).send({ from: user });
+                    await dex.methods.swap_B_to_A(amount.toString()).send({ from: user });
+                    console.log(`\u{1F501} Trader ${user} swapped ${Number(amount) / 1e18} B for A`);
+                    
 
                     let fini = BigInt(await tokenA.methods.balanceOf(user).call());
                     token2 = Number(fini - ini);
@@ -233,7 +290,6 @@ async function simulateDEX() {
     }
 
     console.log("\n\u{1F4B8} LPs removing all liquidity to realize fees...");
-
     for (const user of LPs) {
         const lpBal = BigInt(await dex.methods.get_lp_tokens(user).call());
         if (lpBal > 0n) {

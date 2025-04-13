@@ -36,7 +36,7 @@ contract DEX {
 
     // liquidity gets added in terms of mini-tokens, also lp tokens are minted and transferred in mini-tokens
     function addLiquidity(uint256 amountA, uint256 amountB) external  {
-        require(amountA > 0 && amountB > 0, "Zero amounts");
+        require(amountA > 0 && amountB > 0, "Zero amounts in add liquidity");
         require(tokenA.balanceOf(msg.sender) >= amountA, "Insufficient token A balance");
         require(tokenB.balanceOf(msg.sender) >= amountB, "Insufficient token B balance");
         if(owner == address(0)) {
@@ -73,7 +73,7 @@ contract DEX {
     }
 
     function removeLiquidity(uint256 lpAmount) external  {
-        require(lpAmount > 0, "Zero amount");
+        require(lpAmount > 0, "Zero amount in remove liquidity");
         uint256 totalSupply = lpToken.totalSupply();
         require(totalSupply > 0, "No LP tokens");
         require(lpToken.balanceOf(msg.sender) >= lpAmount, "Insufficient LP balance");
@@ -98,6 +98,7 @@ contract DEX {
     }
 
     function swap_A_to_B(uint256 amt) external{
+        require(amt > 0, "Enter non-zero amount in swap_A_to_B");
         require(tokenA.balanceOf(msg.sender) >= amt, "Insufficient token A balance");
         uint256 eff_A = (997*amt)/1000;
         uint256 amt_B = (eff_A * reserveB) / (reserveA + eff_A);
@@ -112,6 +113,7 @@ contract DEX {
     }
 
     function swap_B_to_A(uint256 amt) external{
+        require(amt > 0, "Enter non-zero amount in swap_B_to_A");
         require(tokenB.balanceOf(msg.sender) >= amt, "Insufficient token B balance");
         uint256 eff_B = (997*amt)/1000;  
         uint256 amt_A = (eff_B * reserveA) / (reserveB + eff_B);
