@@ -88,7 +88,7 @@ async function simulateArbitrage() {
         await arbitrage.methods.perform_arbitrage(
             (10n * SCALE).toString(),
             (initialBalanceB / 10n).toString(),
-            (3n * SCALE).toString()
+            (5n * BigInt(1e16)).toString()
         ).send({ from: arbitrageur, gas:70000000 });
     } catch(err){
         console.error(`Error in perform_arbitrage ${err.message}, ${initialBalanceA/10n}, ${initialBalanceB/10n}`);
@@ -121,8 +121,8 @@ async function simulateArbitrage() {
     console.log("\u{1F504} Removed all liquidity from DEX2");
 
     await tokenA.methods.approve(dex2Address, (1000n * SCALE).toString()).send({ from: arbitrageur });
-    await tokenB.methods.approve(dex2Address, (2100n * SCALE).toString()).send({ from: arbitrageur });
-    await dex2.methods.addLiquidity((1000n * SCALE).toString(), (2100n * SCALE).toString()).send({ from: arbitrageur });
+    await tokenB.methods.approve(dex2Address, (2053n * SCALE).toString()).send({ from: arbitrageur });
+    await dex2.methods.addLiquidity((1000n * SCALE).toString(), (2053n * SCALE).toString()).send({ from: arbitrageur });
     console.log("\u{1F4A7} Reset DEX2 with new liquidity ratio");
 
     // Print reserves before arbitrage
@@ -146,7 +146,7 @@ async function simulateArbitrage() {
         await arbitrage.methods.perform_arbitrage(
             (10n * SCALE).toString(),
             (initialBalanceB / 10n).toString(),
-            (3n * SCALE)
+            (5n * BigInt(1e16)).toString()
         ).send({ from: arbitrageur });
     }catch(err){
         console.error(`Error in perform_arbitrage ${err.message}`);

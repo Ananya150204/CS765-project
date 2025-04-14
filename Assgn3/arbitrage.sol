@@ -79,6 +79,9 @@ contract Arbitrage {
         final_price = get_swap_A_to_B(intermediate_price, left.get_reserveA(), left.get_reserveB());
         uint256 profit_B_A_B = (final_price >= amt_B) ? (final_price - amt_B) : 0;
 
+        if(profit_A_B_A == 0 && profit_B_A_B == 0) return;
+        // this needs to be added because if someone puts in threshold of 0 then negative profit would also be executed
+
         if(profit_A_B_A >= (threshold_percent_scaled * amt_A)/ 1e20){
             require(tokenA.transferFrom(msg.sender, address(this), amt_A), "Transfer failed");
 

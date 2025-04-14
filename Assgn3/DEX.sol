@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "contracts/LPToken.sol";
 import "contracts/Token.sol";
 
-
 // every transaction occurs in terms of mini-tokens, so all the balances outputted are original and in units of mini tokens
 // only the reserve ratio is scaled
 contract DEX {
@@ -16,9 +15,14 @@ contract DEX {
 
     uint256 private reserveA;               // reserves of A at any point
     uint256 private reserveB;               // reserves of B at any point
-    uint256 private feeA;                   // Till a point, how much fees in A has been collected 
-    uint256 private feeB;                   // Till a point, how much fees in B has been collected
     address private owner;
+
+    uint256 private cumulativeFeePerLPTokenA;
+    uint256 private cumulativeFeePerLPTokenB;
+    mapping(address => uint256) private userLastCumulativeFeeA;                 // how much fees has the LP last seen
+    mapping(address => uint256) private userLastCumulativeFeeB;
+    mapping(address => uint256) private earningsA;
+    mapping(address => uint256) private earningsB;
 
     uint256 private constant SCALE = 1e18;
 
@@ -29,9 +33,20 @@ contract DEX {
         lpToken = new LPToken(address(this));
         reserveA = 0;           // reserve stores in terms of mini-tokens
         reserveB = 0;
-        feeA = 0;
-        feeB = 0;
         owner = address(0);
+    }
+
+    // function to update LP's fee earnings
+    function updateEarnings(address user) internal {
+        uint256 userBalance = lpToken.balanceOf(user);
+        uint256 deltaA = cumulativeFeePerLPTokenA - userLastCumulativeFeeA[user];
+        uint256 deltaB = cumulativeFeePerLPTokenB - userLastCumulativeFeeB[user];
+
+        earningsA[user] += (userBalance * deltaA) / SCALE;
+        earningsB[user] += (userBalance * deltaB) / SCALE;
+
+        userLastCumulativeFeeA[user] = cumulativeFeePerLPTokenA;
+        userLastCumulativeFeeB[user] = cumulativeFeePerLPTokenB;
     }
 
     // liquidity gets added in terms of mini-tokens, also lp tokens are minted and transferred in mini-tokens
@@ -49,6 +64,7 @@ contract DEX {
             require(tokenA.transferFrom(msg.sender, address(this), amountA),"Approve the liquidity of A");
             require(tokenB.transferFrom(msg.sender, address(this), amountB),"Approve the liquidity of B");
 
+            updateEarnings(msg.sender);
             uint256 lpAmount = SCALE;
             lpToken.mint(msg.sender, lpAmount);
         } else {
@@ -60,11 +76,12 @@ contract DEX {
                 "Invalid deposit ratio"
             );
 
-            uint256 totalSupply = lpToken.totalSupply();
-            uint256 lpAmount = (totalSupply * amountA) / reserveA;
             require(tokenA.transferFrom(msg.sender, address(this), amountA),"Approve the liquidity of A");
             require(tokenB.transferFrom(msg.sender, address(this), amountB),"Approve the liquidity of B");
 
+            updateEarnings(msg.sender);
+            uint256 totalSupply = lpToken.totalSupply();
+            uint256 lpAmount = (totalSupply * amountA) / reserveA;
             lpToken.mint(msg.sender, lpAmount);
         }
 
@@ -84,17 +101,17 @@ contract DEX {
         reserveA -= amountA;
         reserveB -= amountB;
 
-        uint256 share_of_LP = (lpAmount * feeA) / totalSupply;
-        amountA += share_of_LP;
-        feeA -= share_of_LP;
-        share_of_LP = (lpAmount * feeB) / totalSupply;
-        amountB += share_of_LP;
-        feeB -= share_of_LP;
+        updateEarnings(msg.sender); 
+        uint256 userBalance = lpToken.balanceOf(msg.sender);                        // includes lpAmount
+        uint256 shareA = (lpAmount * earningsA[msg.sender]) / userBalance;
+        uint256 shareB = (lpAmount * earningsB[msg.sender]) / userBalance;
+        earningsA[msg.sender] -= shareA;
+        earningsB[msg.sender] -= shareB;
 
         lpToken.burn(msg.sender, lpAmount);
 
-        tokenA.transfer(msg.sender, amountA);
-        tokenB.transfer(msg.sender, amountB);
+        tokenA.transfer(msg.sender, amountA + shareA);
+        tokenB.transfer(msg.sender, amountB + shareB);
     }
 
     function swap_A_to_B(uint256 amt) external{
@@ -107,9 +124,13 @@ contract DEX {
         require(tokenA.transferFrom(msg.sender, address(this), amt),"Approve the swap from A");
         tokenB.transfer(msg.sender, amt_B);
 
-        feeA = feeA + amt - eff_A;
         reserveA += eff_A;
         reserveB -= amt_B;
+
+        uint256 totalSupply = lpToken.totalSupply();
+        if (totalSupply > 0) {
+            cumulativeFeePerLPTokenA += ((amt - eff_A) * SCALE) / totalSupply;
+        }
     }
 
     function swap_B_to_A(uint256 amt) external{
@@ -122,9 +143,13 @@ contract DEX {
         require(tokenB.transferFrom(msg.sender, address(this), amt),"Approve the swap from B");
         tokenA.transfer(msg.sender, amt_A);
 
-        feeB = feeB + amt - eff_B;   
         reserveA -= amt_A;
         reserveB += eff_B;
+
+        uint256 totalSupply = lpToken.totalSupply();
+        if (totalSupply > 0) {
+            cumulativeFeePerLPTokenB += ((amt - eff_B) * SCALE) / totalSupply;
+        }
     }
 
     function get_B_to_A(uint256 amt_B) external view returns (uint256){
