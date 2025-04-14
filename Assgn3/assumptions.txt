@@ -64,3 +64,24 @@ Deploying ERC20 tokens with initial supply 400000 * SCALE
 .send() → sends the transaction to blockchain.
 
 
+
+
+Calculation of fees -> Rule 1 -- Minting and burning of LPT will always be preceded by updateEarnings.
+
+cumulativeFeePerLPTokenA -- Totalfees/(TotalLPTokens_At_That_Time)
+userLastCumulativeFeeA[user] -- ye ek map hai jo ye bata raha ki kitni fees tak ka hisaab ho gaya
+deltaA ye batayega ki nayi fees kitni hai (since the last hisaab)
+
+swap main totalLPSupply se isliye divide kar rahe hai kyunki maanlo baad main kisine addLiquidity kiya to usko bhi account kar loge totalLPSupply main jo ki nahi karna tha. 
+
+In a hisaab period userBalance remains the same because if it changes in between hisaab takes place as per rule 1.
+
+Eg - Suppose 5 log the with 1 LPT each. Suppose profit earned = 5A. So each gets 1A profit.
+
+Now say another LP comes. He also gets 1 LPT.
+
+Again DEX earn 5A profit.
+Now each should get 5/6A profit. 
+
+If we had not done hisaab earlier and calculated profit now, each one would be getting (5+5)/6 profit which is blatantly wrong.
+
